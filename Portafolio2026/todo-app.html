@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Manager</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237F77DD'/><text y='.9em' font-size='62' x='10'>✅</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--s1:#13131c;--s2:#1c1c28;--s3:#252535;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#eeeef8;--muted:#7777a8;
+  --purple:#7c3aed;--purple-l:#a78bfa;
+  --green:#059669;--green-l:#34d399;
+  --amber-l:#fbbf24;--red-l:#f87171;--blue-l:#60a5fa;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+.back{position:fixed;top:1rem;left:1rem;display:flex;align-items:center;gap:6px;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);border:1px solid var(--border2);color:var(--purple-l);padding:7px 14px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;z-index:200}
+.back:hover{background:rgba(124,58,237,.15)}
+.bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glow{position:absolute;border-radius:50%;filter:blur(100px);opacity:.1}
+.g1{width:500px;height:500px;background:#7c3aed;top:-150px;left:-100px;animation:drift 14s ease-in-out infinite}
+.g2{width:400px;height:400px;background:#059669;bottom:-100px;right:-100px;animation:drift 11s ease-in-out infinite reverse;animation-delay:-5s}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(25px,-25px)}}
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:4.5rem 1.5rem 3rem}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
+.hdr-left h1{font-size:1.7rem;font-weight:800;letter-spacing:-.03em}
+.hdr-left p{color:var(--muted);font-size:14px;margin-top:3px}
+.view-toggle{display:flex;background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.vt-btn{padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:inherit;transition:all .2s}
+.vt-btn.active{background:rgba(124,58,237,.2);color:var(--purple-l)}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:.9rem 1rem;display:flex;align-items:center;gap:10px}
+.stat-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.stat-n{font-size:1.4rem;font-weight:800;line-height:1}
+.stat-l{font-size:11px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+.prog-wrap{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:.9rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem}
+.prog-label{font-size:13px;color:var(--muted);white-space:nowrap}
+.prog-bar{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--purple),var(--green-l));transition:width .6s ease}
+.prog-pct{font-size:13px;font-weight:700;color:var(--purple-l);white-space:nowrap;min-width:32px;text-align:right}
+.add-form{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:1.25rem;margin-bottom:1.25rem}
+.af-title{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.75rem;font-weight:600}
+.add-row{display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap}
+.add-inp{flex:1;min-width:180px;background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.add-inp:focus{border-color:rgba(124,58,237,.5)}
+.add-inp::placeholder{color:var(--muted)}
+.date-inp{width:155px;flex:none;background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:10px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.add-btn{background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;border:none;border-radius:11px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap}
+.add-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,.35)}
+.add-extras{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.prio-group{display:flex;gap:4px}
+.prio-btn{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;transition:all .2s}
+.prio-btn.p-alta.on{background:rgba(220,38,38,.15);border-color:rgba(248,113,113,.4);color:var(--red-l)}
+.prio-btn.p-media.on{background:rgba(180,83,9,.15);border-color:rgba(251,191,36,.4);color:var(--amber-l)}
+.prio-btn.p-baja.on{background:rgba(5,150,105,.15);border-color:rgba(52,211,153,.4);color:var(--green-l)}
+.sel{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:12px;font-family:inherit;outline:none;cursor:pointer}
+.sel option{background:#1c1c28}
+.filters{display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap}
+.f-btn{background:var(--s1);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.f-btn.active{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4);color:var(--purple-l)}
+.f-search{background:var(--s1);border:1px solid var(--border);border-radius:999px;padding:6px 14px;color:var(--text);font-size:12px;font-family:inherit;outline:none;min-width:155px}
+.f-search::placeholder{color:var(--muted)}
+.task-list{display:flex;flex-direction:column;gap:7px}
+.task{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:.85rem 1rem;display:flex;align-items:center;gap:10px;transition:all .2s;cursor:grab;animation:tin .3s ease;position:relative}
+@keyframes tin{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.task:hover{border-color:var(--border2);background:var(--s2)}
+.task.dragging{opacity:.4}
+.task.drag-over{border-color:rgba(124,58,237,.5);background:rgba(124,58,237,.06)}
+.task.done .task-txt{text-decoration:line-through;color:var(--muted)}
+.chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--border2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .2s}
+.chk:hover{border-color:var(--purple-l)}
+.chk.on{background:var(--purple);border-color:var(--purple);color:#fff}
+.prio-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.task-txt{flex:1;font-size:14px;line-height:1.4}
+.task-meta{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.t-cat{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:600;background:rgba(124,58,237,.15);color:var(--purple-l)}
+.t-date{font-size:11px;color:var(--muted)}
+.t-date.overdue{color:var(--red-l)}
+.t-date.soon{color:var(--amber-l)}
+.t-prog{font-size:10px;font-weight:700;color:var(--amber-l)}
+.del-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:3px 6px;border-radius:6px;transition:all .2s;line-height:1}
+.del-btn:hover{color:var(--red-l);background:rgba(220,38,38,.1)}
+.drag-h{color:var(--muted);cursor:grab;font-size:14px;padding:0 2px;user-select:none}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.kanban{grid-template-columns:1fr}}
+.col{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:1rem;min-height:300px;transition:all .2s}
+.col.dov{background:rgba(124,58,237,.06);border-color:rgba(124,58,237,.3)}
+.col-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.col-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.col-dot{width:8px;height:8px;border-radius:50%}
+.col-cnt{font-size:11px;background:rgba(255,255,255,.08);border-radius:999px;padding:2px 9px;color:var(--muted);font-weight:600}
+.col-cards{display:flex;flex-direction:column;gap:7px;min-height:60px}
+.k-card{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:.85rem;cursor:grab;transition:all .2s;animation:tin .3s ease}
+.k-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.k-card.dragging{opacity:.35}
+.kc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem;gap:6px}
+.kc-txt{font-size:13px;font-weight:500;line-height:1.4;flex:1}
+.kc-prio{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.kc-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.kc-del{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:5px;transition:all .2s;margin-left:auto}
+.kc-del:hover{color:var(--red-l)}
+.empty{text-align:center;padding:2rem;color:var(--muted);font-size:13px}
+.empty-ico{font-size:2rem;margin-bottom:.5rem;opacity:.4}
+@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="bg-glow"><div class="glow g1"></div><div class="glow g2"></div></div>
+<a class="back" href="index.html">← Portfolio</a>
+<div class="page">
+
+  <div class="hdr">
+    <div class="hdr-left">
+      <h1>✅ Task Manager</h1>
+      <p>Organizá tareas con prioridades, fechas límite y kanban</p>
+    </div>
+    <div class="view-toggle">
+      <button class="vt-btn active" id="btn-list" onclick="setView('list')">☰ Lista</button>
+      <button class="vt-btn" id="btn-kanban" onclick="setView('kanban')">⊞ Kanban</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-ico" style="background:rgba(124,58,237,.15)">📋</div><div><div class="stat-n" id="s-total">0</div><div class="stat-l">Total</div></div></div>
+    <div class="stat"><div class="stat-ico" style="background:rgba(37,99,235,.15)">⏳</div><div><div class="stat-n" id="s-pend" style="color:#60a5fa">0</div><div class="stat-l">Por hacer</div></div></div>
+    <div class="stat"><div class="stat-ico" style="background:rgba(180,83,9,.15)">🔄</div><div><div class="stat-n" id="s-prog" style="color:#fbbf24">0</div><div class="stat-l">En progreso</div></div></div>
+    <div class="stat"><div class="stat-ico" style="background:rgba(5,150,105,.15)">✅</div><div><div class="stat-n" id="s-done" style="color:#34d399">0</div><div class="stat-l">Completadas</div></div></div>
+  </div>
+
+  <div class="prog-wrap">
+    <span class="prog-label">Progreso general</span>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <span class="prog-pct" id="prog-pct">0%</span>
+  </div>
+
+  <div class="add-form">
+    <div class="af-title">Nueva tarea</div>
+    <div class="add-row">
+      <input class="add-inp" id="inp-task" placeholder="¿Qué tenés que hacer?" onkeydown="if(event.key==='Enter')addTask()">
+      <input class="date-inp" type="date" id="inp-date">
+      <button class="add-btn" onclick="addTask()">+ Agregar</button>
+    </div>
+    <div class="add-extras">
+      <div class="prio-group">
+        <button class="prio-btn p-alta" id="p-alta" onclick="setPrio('alta')">🔴 Alta</button>
+        <button class="prio-btn p-media on" id="p-media" onclick="setPrio('media')">🟡 Media</button>
+        <button class="prio-btn p-baja" id="p-baja" onclick="setPrio('baja')">🟢 Baja</button>
+      </div>
+      <select class="sel" id="inp-cat">
+        <option value="general">📁 General</option>
+        <option value="trabajo">💼 Trabajo</option>
+        <option value="estudio">📚 Estudio</option>
+        <option value="personal">👤 Personal</option>
+        <option value="proyecto">🚀 Proyecto</option>
+      </select>
+      <select class="sel" id="inp-status">
+        <option value="todo">Por hacer</option>
+        <option value="inprogress">En progreso</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="filters">
+    <input class="f-search" id="f-search" placeholder="🔍 Buscar..." oninput="render()">
+    <button class="f-btn active" onclick="setFilter('todas',this)">Todas</button>
+    <button class="f-btn" onclick="setFilter('todo',this)">Por hacer</button>
+    <button class="f-btn" onclick="setFilter('inprogress',this)">En progreso</button>
+    <button class="f-btn" onclick="setFilter('done',this)">Hechas</button>
+    <button class="f-btn" onclick="setFilter('alta',this)">🔴 Alta</button>
+    <button class="f-btn" onclick="setFilter('vencidas',this)">⚠️ Vencidas</button>
+  </div>
+
+  <div id="view-list"><div class="task-list" id="task-list"></div></div>
+
+  <div id="view-kanban" style="display:none">
+    <div class="kanban">
+      <div class="col" id="col-todo" ondragover="dOvCol(event,'todo')" ondrop="dDropCol(event,'todo')" ondragleave="this.classList.remove('dov')">
+        <div class="col-hdr"><div class="col-title"><div class="col-dot" style="background:#60a5fa"></div>Por hacer</div><span class="col-cnt" id="cnt-todo">0</span></div>
+        <div class="col-cards" id="cards-todo"></div>
+      </div>
+      <div class="col" id="col-inprogress" ondragover="dOvCol(event,'inprogress')" ondrop="dDropCol(event,'inprogress')" ondragleave="this.classList.remove('dov')">
+        <div class="col-hdr"><div class="col-title"><div class="col-dot" style="background:#fbbf24"></div>En progreso</div><span class="col-cnt" id="cnt-inprogress">0</span></div>
+        <div class="col-cards" id="cards-inprogress"></div>
+      </div>
+      <div class="col" id="col-done" ondragover="dOvCol(event,'done')" ondrop="dDropCol(event,'done')" ondragleave="this.classList.remove('dov')">
+        <div class="col-hdr"><div class="col-title"><div class="col-dot" style="background:#34d399"></div>Completadas</div><span class="col-cnt" id="cnt-done">0</span></div>
+        <div class="col-cards" id="cards-done"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PC={alta:'#f87171',media:'#fbbf24',baja:'#34d399'};
+const CI={general:'📁',trabajo:'💼',estudio:'📚',personal:'👤',proyecto:'🚀'};
+let tasks=JSON.parse(localStorage.getItem('tm-v4')||'null')||[
+  {id:1,text:'Terminar el portfolio y subirlo a GitHub',prio:'alta',cat:'proyecto',status:'inprogress',date:'2025-07-20',order:0},
+  {id:2,text:'Aprender React',prio:'media',cat:'estudio',status:'todo',date:'2025-08-01',order:1},
+  {id:3,text:'Agregar más proyectos al portfolio',prio:'media',cat:'proyecto',status:'todo',date:'',order:2},
+  {id:4,text:'Actualizar LinkedIn',prio:'baja',cat:'personal',status:'todo',date:'',order:3},
+  {id:5,text:'Crear cuenta en LinkedIn',prio:'baja',cat:'personal',status:'done',date:'',order:4},
+];
+let nid=Math.max(...tasks.map(t=>t.id))+1,cp='media',cf='todas',cv='list',did=null,doid=null;
+
+function setPrio(p){cp=p;['alta','media','baja'].forEach(x=>{document.getElementById('p-'+x).className='prio-btn p-'+x+(x===p?' on':'');});}
+
+function setFilter(f,btn){cf=f;document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+
+function gf(){
+  const q=document.getElementById('f-search').value.toLowerCase();
+  const td=new Date();td.setHours(0,0,0,0);
+  return tasks.filter(t=>{
+    if(q&&!t.text.toLowerCase().includes(q))return false;
+    if(cf==='todo')return t.status==='todo';
+    if(cf==='inprogress')return t.status==='inprogress';
+    if(cf==='done')return t.status==='done';
+    if(cf==='alta')return t.prio==='alta';
+    if(cf==='vencidas')return t.date&&new Date(t.date)<td&&t.status!=='done';
+    return true;
+  }).sort((a,b)=>a.order-b.order);
+}
+
+function di(d){
+  if(!d)return null;
+  const td=new Date();td.setHours(0,0,0,0);
+  const due=new Date(d);due.setHours(0,0,0,0);
+  const diff=Math.round((due-td)/(864e5));
+  if(diff<0)return{l:'Venció hace '+Math.abs(diff)+'d',c:'overdue'};
+  if(diff===0)return{l:'Hoy',c:'soon'};
+  if(diff<=3)return{l:diff+'d',c:'soon'};
+  return{l:due.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'}),c:''};
+}
+
+function stats(){
+  const tot=tasks.length,dn=tasks.filter(t=>t.status==='done').length;
+  const pg=tasks.filter(t=>t.status==='inprogress').length,td=tasks.filter(t=>t.status==='todo').length;
+  const pct=tot?Math.round(dn/tot*100):0;
+  document.getElementById('s-total').textContent=tot;
+  document.getElementById('s-done').textContent=dn;
+  document.getElementById('s-prog').textContent=pg;
+  document.getElementById('s-pend').textContent=td;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-pct').textContent=pct+'%';
+}
+
+function save(){localStorage.setItem('tm-v4',JSON.stringify(tasks));}
+
+function addTask(){
+  const txt=document.getElementById('inp-task').value.trim();
+  if(!txt)return;
+  tasks.push({id:nid++,text:txt,prio:cp,cat:document.getElementById('inp-cat').value,status:document.getElementById('inp-status').value,date:document.getElementById('inp-date').value,order:tasks.length});
+  document.getElementById('inp-task').value='';
+  save();render();
+}
+
+function del(id){tasks=tasks.filter(t=>t.id!==id);save();render();}
+
+function tog(id){const t=tasks.find(x=>x.id===id);if(t){t.status=t.status==='done'?'todo':'done';save();render();}}
+
+// Drag lista
+function dStart(e,id){did=id;setTimeout(()=>e.target.classList.add('dragging'),0);}
+function dEnd(e){e.target.classList.remove('dragging');did=null;doid=null;}
+function dOv(e,id){e.preventDefault();if(id===did)return;document.querySelectorAll('.task').forEach(t=>t.classList.remove('drag-over'));document.querySelector('[data-id="'+id+'"]')?.classList.add('drag-over');doid=id;}
+function dDrop(e){
+  e.preventDefault();document.querySelectorAll('.task').forEach(t=>t.classList.remove('drag-over'));
+  if(did===null||doid===null||did===doid)return;
+  const fi=tasks.findIndex(t=>t.id===did),ti=tasks.findIndex(t=>t.id===doid);
+  const[m]=tasks.splice(fi,1);tasks.splice(ti,0,m);tasks.forEach((t,i)=>t.order=i);
+  save();render();
+}
+
+// Drag kanban
+function dOvCol(e,col){e.preventDefault();document.querySelectorAll('.col').forEach(c=>c.classList.remove('dov'));document.getElementById('col-'+col).classList.add('dov');}
+function dDropCol(e,col){e.preventDefault();document.querySelectorAll('.col').forEach(c=>c.classList.remove('dov'));if(did===null)return;const t=tasks.find(x=>x.id===did);if(t){t.status=col;save();render();}}
+
+function renderList(){
+  const el=document.getElementById('task-list');
+  const f=gf();
+  if(!f.length){el.innerHTML='<div class="empty"><div class="empty-ico">📋</div>No hay tareas aquí.</div>';return;}
+  el.innerHTML='';
+  f.forEach(t=>{
+    const d=di(t.date);
+    const div=document.createElement('div');
+    div.className='task'+(t.status==='done'?' done':'');
+    div.dataset.id=t.id;div.draggable=true;
+    div.ondragstart=e=>dStart(e,t.id);div.ondragend=e=>dEnd(e);
+    div.ondragover=e=>dOv(e,t.id);div.ondrop=e=>dDrop(e);
+    div.innerHTML=
+      '<span class="drag-h" title="Arrastrá">⠿</span>'+
+      '<div class="chk '+(t.status==='done'?'on':'')+'" onclick="tog('+t.id+')">'+(t.status==='done'?'✓':'')+'</div>'+
+      '<div class="prio-dot" style="background:'+PC[t.prio]+'"></div>'+
+      '<div class="task-txt">'+t.text+'</div>'+
+      '<div class="task-meta">'+
+        '<span class="t-cat">'+(CI[t.cat]||'📁')+' '+t.cat+'</span>'+
+        (d?'<span class="t-date '+d.c+'">📅 '+d.l+'</span>':'')+
+        (t.status==='inprogress'?'<span class="t-prog">● En progreso</span>':'')+
+      '</div>'+
+      '<button class="del-btn" onclick="del('+t.id+')">✕</button>';
+    el.appendChild(div);
+  });
+}
+
+function renderKanban(){
+  ['todo','inprogress','done'].forEach(col=>{
+    const cards=document.getElementById('cards-'+col);
+    const items=tasks.filter(t=>t.status===col).sort((a,b)=>a.order-b.order);
+    document.getElementById('cnt-'+col).textContent=items.length;
+    if(!items.length){cards.innerHTML='<div class="empty" style="padding:.75rem 0"><div class="empty-ico" style="font-size:1.4rem">📭</div>Sin tareas</div>';return;}
+    cards.innerHTML='';
+    items.forEach(t=>{
+      const d=di(t.date);
+      const card=document.createElement('div');
+      card.className='k-card';card.draggable=true;card.dataset.id=t.id;
+      card.ondragstart=e=>dStart(e,t.id);card.ondragend=e=>dEnd(e);
+      card.innerHTML=
+        '<div class="kc-top"><div class="kc-txt">'+t.text+'</div><div class="kc-prio" style="background:'+PC[t.prio]+'"></div></div>'+
+        '<div class="kc-meta">'+
+          '<span class="t-cat" style="font-size:10px">'+(CI[t.cat]||'📁')+' '+t.cat+'</span>'+
+          (d?'<span class="t-date '+d.c+'" style="font-size:10px">📅 '+d.l+'</span>':'')+
+          '<button class="kc-del" onclick="del('+t.id+')">✕</button>'+
+        '</div>';
+      cards.appendChild(card);
+    });
+  });
+}
+
+function render(){stats();if(cv==='list')renderList();else renderKanban();}
+
+function setView(v){
+  cv=v;
+  document.getElementById('view-list').style.display=v==='list'?'block':'none';
+  document.getElementById('view-kanban').style.display=v==='kanban'?'block':'none';
+  document.getElementById('btn-list').classList.toggle('active',v==='list');
+  document.getElementById('btn-kanban').classList.toggle('active',v==='kanban');
+  render();
+}
+
+const def=new Date();def.setDate(def.getDate()+3);
+document.getElementById('inp-date').value=def.toISOString().split('T')[0];
+render();
+</script>
+</body>
+</html>

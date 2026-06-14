@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETL Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23059669'/><text y='.9em' font-size='62' x='10'>🗄️</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08080f;--s1:#10101a;--s2:#181824;--s3:#20202e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#eeeef8;--muted:#6666a0;
+  --green:#059669;--green-l:#34d399;--green-ll:#6ee7b7;
+  --blue:#2563eb;--blue-l:#60a5fa;
+  --amber:#b45309;--amber-l:#fbbf24;
+  --red:#dc2626;--red-l:#f87171;
+  --purple:#7c3aed;--purple-l:#a78bfa;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+.back{position:fixed;top:1rem;left:1rem;display:flex;align-items:center;gap:6px;background:rgba(8,8,15,.92);backdrop-filter:blur(12px);border:1px solid var(--border2);color:var(--green-l);padding:7px 14px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;z-index:200}
+.back:hover{background:rgba(5,150,105,.15)}
+.bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glow{position:absolute;border-radius:50%;filter:blur(120px)}
+.g1{width:600px;height:600px;background:#059669;opacity:.08;top:-200px;left:-100px;animation:drift 14s ease-in-out infinite}
+.g2{width:400px;height:400px;background:#2563eb;opacity:.07;bottom:-100px;right:-100px;animation:drift 10s ease-in-out infinite reverse;animation-delay:-4s}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-20px)}}
+.page{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:4.5rem 1.5rem 3rem}
+
+/* ── HEADER ── */
+.hdr{text-align:center;margin-bottom:2rem}
+.hdr h1{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.35rem}
+.hdr p{color:var(--muted);font-size:14px}
+.hdr-badges{display:flex;gap:8px;justify-content:center;margin-top:.75rem;flex-wrap:wrap}
+.hb{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 12px;font-size:11px;font-weight:700;letter-spacing:.04em}
+.hb-green{background:rgba(5,150,105,.12);border:1px solid rgba(52,211,153,.25);color:var(--green-l)}
+.hb-blue{background:rgba(37,99,235,.12);border:1px solid rgba(96,165,250,.25);color:var(--blue-l)}
+.hb-amber{background:rgba(180,83,9,.12);border:1px solid rgba(251,191,36,.25);color:var(--amber-l)}
+
+/* ── MÉTRICAS ── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.5rem}
+@media(max-width:800px){.metrics{grid-template-columns:repeat(3,1fr)}}
+.metric{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:.9rem 1rem;position:relative;overflow:hidden;transition:all .3s}
+.metric::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.metric.active-m::before{opacity:.06}
+.metric.green-m::before{background:var(--green)}
+.metric.blue-m::before{background:var(--blue)}
+.metric.amber-m::before{background:var(--amber)}
+.metric.red-m::before{background:var(--red)}
+.metric.purple-m::before{background:var(--purple)}
+.metric-ico{font-size:1.3rem;margin-bottom:.4rem}
+.metric-val{font-size:1.5rem;font-weight:800;line-height:1;transition:all .3s}
+.metric-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+.metric.green-m .metric-val{color:var(--green-l)}
+.metric.blue-m .metric-val{color:var(--blue-l)}
+.metric.amber-m .metric-val{color:var(--amber-l)}
+.metric.red-m .metric-val{color:var(--red-l)}
+.metric.purple-m .metric-val{color:var(--purple-l)}
+
+/* ── GRID PRINCIPAL ── */
+.main-grid{display:grid;grid-template-columns:1fr 380px;gap:1.25rem;margin-bottom:1.25rem}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr}}
+
+/* ── PIPELINE ── */
+.pipeline-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:1.5rem}
+.card-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
+.steps-wrap{display:flex;flex-direction:column;gap:0}
+.step{display:flex;align-items:flex-start;gap:14px;padding:1rem;border-radius:14px;transition:all .35s;position:relative}
+.step.s-idle{background:transparent}
+.step.s-run{background:rgba(37,99,235,.08);border:1px solid rgba(96,165,250,.2);animation:pulse-border 1s ease infinite}
+.step.s-ok{background:rgba(5,150,105,.06);border:1px solid rgba(52,211,153,.15)}
+.step.s-err{background:rgba(220,38,38,.08);border:1px solid rgba(248,113,113,.2)}
+@keyframes pulse-border{0%,100%{border-color:rgba(96,165,250,.2)}50%{border-color:rgba(96,165,250,.5)}}
+.step-connector{width:2px;height:20px;background:var(--border);margin:0 0 0 29px;transition:background .4s}
+.step-connector.filled{background:var(--green-l)}
+.step-ico-wrap{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;transition:all .3s}
+.step-ico-idle{background:var(--s3)}
+.step-ico-run{background:rgba(37,99,235,.2);animation:spin-ico 2s linear infinite}
+.step-ico-ok{background:rgba(5,150,105,.2)}
+.step-ico-err{background:rgba(220,38,38,.2)}
+@keyframes spin-ico{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.step-content{flex:1}
+.step-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.step-detail{font-size:12px;color:var(--muted)}
+.step-badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px;flex-shrink:0;margin-top:3px;align-self:flex-start}
+.badge-idle{background:rgba(255,255,255,.06);color:var(--muted)}
+.badge-run{background:rgba(96,165,250,.15);color:var(--blue-l);animation:blink .8s ease infinite}
+.badge-ok{background:rgba(52,211,153,.15);color:var(--green-l)}
+.badge-err{background:rgba(248,113,113,.15);color:var(--red-l)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* sub-steps */
+.substeps{margin-top:.6rem;display:flex;flex-direction:column;gap:4px}
+.substep{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:3px 0}
+.substep-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
+.substep.ss-ok{color:var(--green-ll)}
+.substep.ss-ok .substep-dot{background:var(--green-l)}
+.substep.ss-run{color:var(--blue-l)}
+.substep.ss-run .substep-dot{background:var(--blue-l);animation:blink .6s infinite}
+.substep.ss-err{color:var(--red-l)}
+.substep.ss-err .substep-dot{background:var(--red-l)}
+
+/* progress bar de step */
+.step-prog{height:3px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:.5rem;overflow:hidden;display:none}
+.step-prog.show{display:block}
+.step-prog-fill{height:100%;border-radius:99px;width:0%;transition:width .4s ease}
+
+/* ── CONTROLES ── */
+.controls-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
+.ctrl-section{margin-bottom:.25rem}
+.ctrl-label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:.6rem}
+.ctrl-btns{display:flex;flex-direction:column;gap:7px}
+.run-all-btn{width:100%;background:linear-gradient(135deg,var(--green),#064e3b);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.run-all-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 24px rgba(5,150,105,.35)}
+.run-all-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.step-btn{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:8px}
+.step-btn:hover:not(:disabled){border-color:var(--border2);color:var(--text);background:var(--s3)}
+.step-btn:disabled{opacity:.35;cursor:not-allowed}
+.step-btn.running{border-color:rgba(96,165,250,.4);color:var(--blue-l);background:rgba(96,165,250,.06)}
+.err-btn{width:100%;background:rgba(220,38,38,.1);border:1px solid rgba(248,113,113,.25);color:var(--red-l);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:8px}
+.err-btn:hover:not(:disabled){background:rgba(220,38,38,.18);border-color:rgba(248,113,113,.5)}
+.err-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* speed slider */
+.speed-wrap{display:flex;align-items:center;gap:10px}
+.speed-wrap input[type=range]{flex:1;accent-color:var(--green-l)}
+.speed-val{font-size:12px;font-weight:700;color:var(--green-l);min-width:35px;text-align:right}
+
+/* ── LOG ── */
+.log-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:1.5rem;margin-bottom:1.25rem}
+.log-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem}
+.log-box{background:#060610;border:1px solid var(--border);border-radius:12px;padding:1rem;font-family:'Courier New',monospace;font-size:11.5px;line-height:1.9;height:190px;overflow-y:auto}
+.log-line{display:flex;gap:10px;align-items:flex-start}
+.log-time{color:#444466;flex-shrink:0;font-size:10px;padding-top:2px}
+.log-msg{flex:1}
+.l-ok{color:var(--green-l)}.l-info{color:var(--blue-l)}.l-warn{color:var(--amber-l)}.l-err{color:var(--red-l)}.l-dim{color:#444466}
+.clear-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s}
+.clear-btn:hover{border-color:var(--red-l);color:var(--red-l)}
+
+/* ── GRÁFICO BARRAS ── */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+@media(max-width:800px){.bottom-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:1.5rem}
+.bars-wrap{display:flex;flex-direction:column;gap:12px;margin-top:.75rem}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-lbl{font-size:12px;color:var(--muted);width:130px;flex-shrink:0}
+.bar-track{flex:1;height:10px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;transition:width 1s cubic-bezier(.16,1,.3,1);width:0%}
+.bar-val{font-size:12px;font-weight:700;width:60px;text-align:right;flex-shrink:0}
+
+/* ── HISTÓRICO ── */
+.hist-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:1.5rem}
+.hist-list{display:flex;flex-direction:column;gap:7px;margin-top:.75rem;max-height:220px;overflow-y:auto}
+.hist-item{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:.75rem 1rem;display:flex;align-items:center;gap:12px}
+.hi-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.hi-info{flex:1}
+.hi-date{font-size:12px;font-weight:600}
+.hi-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.hi-badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px}
+.empty-hist{text-align:center;padding:1.5rem;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="bg-glow"><div class="glow g1"></div><div class="glow g2"></div></div>
+<a class="back" href="index.html">← Portfolio</a>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <h1>🗄️ ETL Data Warehouse</h1>
+    <p>Pipeline de Extracción, Transformación y Carga — Simulación interactiva</p>
+    <div class="hdr-badges">
+      <span class="hb hb-green">✓ SQL puro</span>
+      <span class="hb hb-blue">PostgreSQL</span>
+      <span class="hb hb-amber">Manejo de errores</span>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics">
+    <div class="metric green-m"><div class="metric-ico">📦</div><div class="metric-val" id="m-rows">0</div><div class="metric-lbl">Registros</div></div>
+    <div class="metric blue-m"><div class="metric-ico">⚡</div><div class="metric-val" id="m-speed">0/s</div><div class="metric-lbl">Velocidad</div></div>
+    <div class="metric amber-m"><div class="metric-ico">🗂️</div><div class="metric-val" id="m-tables">0/4</div><div class="metric-lbl">Tablas</div></div>
+    <div class="metric red-m"><div class="metric-ico">⚠️</div><div class="metric-val" id="m-errors">0</div><div class="metric-lbl">Errores</div></div>
+    <div class="metric purple-m"><div class="metric-ico">🕐</div><div class="metric-val" id="m-time">0s</div><div class="metric-lbl">Duración</div></div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- PIPELINE -->
+    <div class="pipeline-card">
+      <div class="card-title">
+        <span>Pipeline ETL</span>
+        <span id="pipe-status" style="font-size:12px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">Listo para ejecutar</span>
+      </div>
+      <div class="steps-wrap" id="steps-wrap"></div>
+    </div>
+
+    <!-- CONTROLES -->
+    <div class="controls-card">
+      <div class="ctrl-section">
+        <div class="ctrl-label">Ejecución completa</div>
+        <div class="ctrl-btns">
+          <button class="run-all-btn" id="btn-run-all" onclick="runAll()">▶ Ejecutar todo el pipeline</button>
+          <button class="err-btn" id="btn-run-err" onclick="runWithError()">⚡ Simular fallo en transformación</button>
+        </div>
+      </div>
+
+      <div class="ctrl-section">
+        <div class="ctrl-label">Ejecución paso a paso</div>
+        <div class="ctrl-btns">
+          <button class="step-btn" id="btn-extract" onclick="runStep(0)">📤 Solo Extracción</button>
+          <button class="step-btn" id="btn-transform" onclick="runStep(1)">⚙️ Solo Transformación</button>
+          <button class="step-btn" id="btn-load" onclick="runStep(2)">📥 Solo Carga</button>
+        </div>
+      </div>
+
+      <div class="ctrl-section">
+        <div class="ctrl-label">Velocidad de simulación</div>
+        <div class="speed-wrap">
+          <span style="font-size:12px;color:var(--muted)">🐢</span>
+          <input type="range" min="1" max="5" value="3" id="speed-slider" oninput="updateSpeed(this.value)">
+          <span style="font-size:12px;color:var(--muted)">🐇</span>
+          <span class="speed-val" id="speed-val">x3</span>
+        </div>
+      </div>
+
+      <div class="ctrl-section">
+        <div class="ctrl-label">Progreso global</div>
+        <div style="height:8px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden">
+          <div id="global-prog" style="height:100%;background:linear-gradient(90deg,var(--green),var(--blue-l));border-radius:99px;width:0%;transition:width .5s ease"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:5px;text-align:right" id="global-pct">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-card">
+    <div class="log-hdr">
+      <span class="card-title" style="margin:0">Log de ejecución</span>
+      <button class="clear-btn" onclick="clearLog()">✕ Limpiar</button>
+    </div>
+    <div class="log-box" id="log-box">
+      <div class="log-line"><span class="log-time">--:--:--</span><span class="log-msg l-dim">Sistema listo. Seleccioná una opción para iniciar el pipeline ETL.</span></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+
+    <!-- GRÁFICO BARRAS -->
+    <div class="chart-card">
+      <div class="card-title">Tablas cargadas en DW</div>
+      <div class="bars-wrap" id="bars-wrap"></div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="hist-card">
+      <div class="card-title">
+        <span>Historial de ejecuciones</span>
+        <button class="clear-btn" onclick="clearHistorial()">✕</button>
+      </div>
+      <div class="hist-list" id="hist-list">
+        <div class="empty-hist">Sin ejecuciones aún.<br>Ejecutá el pipeline para ver el historial.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ── CONFIG ────────────────────────────────────────────────────── */
+const TABLES = [
+  {name:'DIMFechas',   rows:24,  color:'#a78bfa', max:30},
+  {name:'DIMClientes', rows:48,  color:'#60a5fa', max:60},
+  {name:'DIMProductos',rows:87,  color:'#34d399', max:100},
+  {name:'FACTPedidos', rows:310, color:'#fbbf24', max:350},
+];
+
+const STEPS_DEF = [
+  {
+    id:'extract', name:'Extracción', ico:'📤', color:'#a78bfa',
+    detail:'BD PEDIDOS → Clientes, Productos, Pedidos, DetallePedidos',
+    subs:['Conectando a BD PEDIDOS...','Leyendo tabla Clientes (48 reg.)','Leyendo tabla Productos (87 reg.)','Leyendo tabla Pedidos (310 reg.)','Leyendo DetallePedidos (450 reg.)'],
+  },
+  {
+    id:'transform', name:'Transformación', ico:'⚙️', color:'#60a5fa',
+    detail:'Normalización, fechas, claves sustitutas, validaciones',
+    subs:['Parseando fechas → DIMFechas...','Generando claves sustitutas...','Validando integridad referencial...','Calculando totales FACTPedidos...','Normalizando nombres proveedores...'],
+  },
+  {
+    id:'load', name:'Carga', ico:'📥', color:'#34d399',
+    detail:'DW → DIMFechas, DIMClientes, DIMProductos, FACTPedidos',
+    subs:['Cargando DIMFechas (24 filas)...','Cargando DIMClientes (48 filas)...','Cargando DIMProductos (87 filas)...','Cargando FACTPedidos (310 filas)...'],
+  },
+];
+
+let historial = JSON.parse(localStorage.getItem('etl-hist') || '[]');
+let speedMult = 3;
+let running = false;
+let stepStates = ['idle','idle','idle'];
+let totalRows = 0;
+let errorMode = false;
+let startTime = null;
+let tableRows = [0,0,0,0];
+
+/* ── SPEED ─────────────────────────────────────────────────────── */
+function updateSpeed(v){
+  speedMult = parseInt(v);
+  document.getElementById('speed-val').textContent = 'x'+v;
+}
+function delay(ms){ return new Promise(r => setTimeout(r, ms / speedMult)); }
+
+/* ── BUILD PIPELINE ────────────────────────────────────────────── */
+function buildPipeline(){
+  const wrap = document.getElementById('steps-wrap');
+  wrap.innerHTML = '';
+  STEPS_DEF.forEach((s, i) => {
+    const st = stepStates[i];
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <div class="step s-${st}" id="step-${s.id}">
+        <div class="step-ico-wrap step-ico-${st}" id="ico-${s.id}">${st === 'run' ? '🔄' : s.ico}</div>
+        <div class="step-content">
+          <div class="step-name">${s.name}</div>
+          <div class="step-detail">${s.detail}</div>
+          <div class="substeps" id="subs-${s.id}">
+            ${s.subs.map((sub,si) => `<div class="substep ss-idle" id="sub-${s.id}-${si}"><div class="substep-dot"></div>${sub}</div>`).join('')}
+          </div>
+          <div class="step-prog" id="prog-${s.id}">
+            <div class="step-prog-fill" id="progfill-${s.id}" style="background:${s.color}"></div>
+          </div>
+        </div>
+        <span class="step-badge badge-${st}" id="badge-${s.id}">${{idle:'Espera',run:'Ejecutando',ok:'✓ Listo',err:'✕ Error'}[st]}</span>
+      </div>
+      ${i < STEPS_DEF.length-1 ? `<div class="step-connector${st==='ok'?' filled':''}" id="conn-${i}"></div>` : ''}`;
+    wrap.appendChild(div);
+  });
+}
+
+/* ── STEP VISUAL ───────────────────────────────────────────────── */
+function setStep(id, state){
+  const step  = document.getElementById('step-'+id);
+  const ico   = document.getElementById('ico-'+id);
+  const badge = document.getElementById('badge-'+id);
+  const prog  = document.getElementById('prog-'+id);
+  const s     = STEPS_DEF.find(x => x.id === id);
+  step.className  = 'step s-'+state;
+  ico.className   = 'step-ico-wrap step-ico-'+state;
+  ico.textContent = state === 'run' ? '🔄' : state === 'err' ? '❌' : state === 'ok' ? '✅' : s.ico;
+  badge.className = 'step-badge badge-'+state;
+  badge.textContent = {idle:'Espera',run:'Ejecutando',ok:'✓ Listo',err:'✕ Error'}[state];
+  if(state === 'run'){ prog.classList.add('show'); }
+}
+
+async function animateSubsteps(id, isError = false, errorAt = -1){
+  const s = STEPS_DEF.find(x => x.id === id);
+  const fill = document.getElementById('progfill-'+id);
+  for(let i = 0; i < s.subs.length; i++){
+    if(isError && i === errorAt){
+      document.getElementById(`sub-${id}-${i}`).className = 'substep ss-err';
+      fill.style.width = Math.round((i/s.subs.length)*100)+'%';
+      return false;
+    }
+    document.getElementById(`sub-${id}-${i}`).className = 'substep ss-run';
+    await delay(400);
+    document.getElementById(`sub-${id}-${i}`).className = 'substep ss-ok';
+    fill.style.width = Math.round(((i+1)/s.subs.length)*100)+'%';
+  }
+  return true;
+}
+
+/* ── CONNECTOR ─────────────────────────────────────────────────── */
+function fillConnector(i){ const c = document.getElementById('conn-'+i); if(c) c.classList.add('filled'); }
+
+/* ── BARRAS ────────────────────────────────────────────────────── */
+function buildBars(){
+  const wrap = document.getElementById('bars-wrap');
+  wrap.innerHTML = '';
+  TABLES.forEach((t,i) => {
+    wrap.innerHTML += `
+      <div class="bar-row">
+        <div class="bar-lbl">${t.name}</div>
+        <div class="bar-track"><div class="bar-fill" id="bar-${i}" style="background:${t.color}"></div></div>
+        <div class="bar-val" id="barval-${i}" style="color:${t.color}">0</div>
+      </div>`;
+  });
+}
+
+function updateBar(i, rows){
+  const pct = Math.min(rows / TABLES[i].max * 100, 100);
+  document.getElementById('bar-'+i).style.width = pct+'%';
+  document.getElementById('barval-'+i).textContent = rows;
+}
+
+function resetBars(){
+  tableRows = [0,0,0,0];
+  TABLES.forEach((_,i) => updateBar(i,0));
+}
+
+/* ── LOG ───────────────────────────────────────────────────────── */
+function log(msg, type=''){
+  const box = document.getElementById('log-box');
+  const now = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-time">${now}</span><span class="log-msg l-${type||'dim'}">${msg}</span>`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+function clearLog(){ document.getElementById('log-box').innerHTML = ''; log('Log limpiado.','dim'); }
+
+/* ── MÉTRICAS ──────────────────────────────────────────────────── */
+function setMetric(id, val){ document.getElementById(id).textContent = val; }
+function updateGlobalProg(pct){
+  document.getElementById('global-prog').style.width = pct+'%';
+  document.getElementById('global-pct').textContent = pct+'%';
+}
+
+/* ── LOCK BUTTONS ──────────────────────────────────────────────── */
+function lockAll(lock){
+  ['btn-run-all','btn-run-err','btn-extract','btn-transform','btn-load'].forEach(id => {
+    const btn = document.getElementById(id);
+    if(btn) btn.disabled = lock;
+  });
+}
+
+/* ── RESET ─────────────────────────────────────────────────────── */
+function resetPipeline(){
+  stepStates = ['idle','idle','idle'];
+  totalRows = 0;
+  buildPipeline();
+  resetBars();
+  setMetric('m-rows','0');
+  setMetric('m-speed','0/s');
+  setMetric('m-tables','0/4');
+  setMetric('m-errors','0');
+  setMetric('m-time','0s');
+  updateGlobalProg(0);
+  document.getElementById('pipe-status').textContent = 'Listo para ejecutar';
+  document.getElementById('pipe-status').style.color = 'var(--muted)';
+}
+
+/* ── RUN STEP INDIVIDUAL ─────────────────────────────────────────  */
+async function runStep(idx){
+  if(running) return;
+  running = true;
+  lockAll(true);
+  startTime = Date.now();
+  const s = STEPS_DEF[idx];
+  log(`Ejecutando solo: ${s.name}...`, 'info');
+  setStep(s.id, 'run');
+  updateGlobalProg(30);
+  await delay(300);
+  const ok = await animateSubsteps(s.id);
+  await delay(200);
+  if(ok){
+    setStep(s.id, 'ok');
+    if(idx === 2){
+      // simular carga parcial
+      for(let i=0;i<TABLES.length;i++){
+        await delay(250);
+        tableRows[i] = TABLES[i].rows;
+        updateBar(i, tableRows[i]);
+        totalRows += TABLES[i].rows;
+      }
+      setMetric('m-tables','4/4');
+    }
+    log(`${s.name} completada correctamente.`, 'ok');
+    updateGlobalProg(100);
+  }
+  const elapsed = ((Date.now()-startTime)/1000).toFixed(1);
+  setMetric('m-time', elapsed+'s');
+  document.getElementById('pipe-status').textContent = `Solo ${s.name} — completado`;
+  document.getElementById('pipe-status').style.color = 'var(--green-l)';
+  running = false;
+  lockAll(false);
+}
+
+/* ── RUN ALL ─────────────────────────────────────────────────────  */
+async function runAll(withError = false){
+  if(running) return;
+  running = true;
+  lockAll(true);
+  resetPipeline();
+  startTime = Date.now();
+  setMetric('m-errors','0');
+  log('═══════ Iniciando proceso ETL ═══════', 'info');
+  document.getElementById('pipe-status').textContent = 'Ejecutando...';
+  document.getElementById('pipe-status').style.color = 'var(--blue-l)';
+
+  // ── EXTRACCIÓN ──
+  setStep('extract','run');
+  updateGlobalProg(5);
+  log('EXTRACCIÓN — conectando a BD PEDIDOS...','info');
+  await delay(500);
+  const okE = await animateSubsteps('extract');
+  await delay(200);
+  if(okE){
+    setStep('extract','ok');
+    fillConnector(0);
+    log('Extracción completada — 895 registros leídos.','ok');
+    updateGlobalProg(33);
+    setMetric('m-rows','895');
+    setMetric('m-speed', Math.round(895/((Date.now()-startTime)/1000))+'/s');
+  }
+  await delay(300);
+
+  // ── TRANSFORMACIÓN ──
+  setStep('transform','run');
+  updateGlobalProg(40);
+  log('TRANSFORMACIÓN — procesando registros...','info');
+  await delay(400);
+  const okT = await animateSubsteps('transform', withError, 2);
+
+  if(!okT){
+    setStep('transform','err');
+    setMetric('m-errors','1');
+    log('✕ ERROR en TRANSFORMACIÓN — fallo en validación de integridad referencial.','err');
+    log('  Detalle: FK inválida detectada en DetallePedidos (idproducto=NULL).','err');
+    log('  Pipeline abortado. Rollback ejecutado. Ningún dato fue cargado.','warn');
+    updateGlobalProg(40);
+    document.getElementById('pipe-status').textContent = '✕ Pipeline falló en Transformación';
+    document.getElementById('pipe-status').style.color = 'var(--red-l)';
+    const elapsed = ((Date.now()-startTime)/1000).toFixed(1);
+    setMetric('m-time', elapsed+'s');
+    addHistorial(false, elapsed, 0, 'Error FK en Transformación');
+    running = false;
+    lockAll(false);
+    return;
+  }
+
+  await delay(200);
+  setStep('transform','ok');
+  fillConnector(1);
+  log('Transformación completada — 469 registros procesados.','ok');
+  updateGlobalProg(66);
+  setMetric('m-rows','469');
+  await delay(300);
+
+  // ── CARGA ──
+  setStep('load','run');
+  updateGlobalProg(70);
+  log('CARGA — escribiendo en DW Pedidos...','info');
+  await delay(300);
+
+  const subNames = ['DIMFechas','DIMClientes','DIMProductos','FACTPedidos'];
+  for(let i = 0; i < TABLES.length; i++){
+    const sub = document.getElementById(`sub-load-${i}`);
+    if(sub) sub.className = 'substep ss-run';
+    await delay(500);
+    if(sub) sub.className = 'substep ss-ok';
+    const fill = document.getElementById('progfill-load');
+    if(fill) fill.style.width = ((i+1)/TABLES.length*100)+'%';
+    tableRows[i] = TABLES[i].rows;
+    updateBar(i, tableRows[i]);
+    setMetric('m-tables', (i+1)+'/4');
+    log(`  ${subNames[i]} — ${TABLES[i].rows} filas cargadas.`,'ok');
+    updateGlobalProg(70 + Math.round((i+1)/TABLES.length*28));
+  }
+
+  await delay(200);
+  setStep('load','ok');
+  const totalFinal = TABLES.reduce((a,t)=>a+t.rows,0);
+  setMetric('m-rows', totalFinal.toLocaleString('es-AR'));
+  const elapsed = ((Date.now()-startTime)/1000).toFixed(1);
+  setMetric('m-speed', Math.round(totalFinal/parseFloat(elapsed))+'/s');
+  setMetric('m-time', elapsed+'s');
+  setMetric('m-errors','0');
+  updateGlobalProg(100);
+
+  log('═══════ Pipeline ETL completado exitosamente ═══════','ok');
+  log(`  Total registros: ${totalFinal} · Tiempo: ${elapsed}s · Tablas: 4/4`,'ok');
+
+  document.getElementById('pipe-status').textContent = '✓ Completado exitosamente';
+  document.getElementById('pipe-status').style.color = 'var(--green-l)';
+
+  addHistorial(true, elapsed, totalFinal, null);
+  running = false;
+  lockAll(false);
+}
+
+async function runWithError(){
+  await runAll(true);
+}
+
+/* ── HISTORIAL ─────────────────────────────────────────────────── */
+function addHistorial(ok, elapsed, rows, errMsg){
+  historial.unshift({ok, elapsed, rows, errMsg, ts: Date.now()});
+  if(historial.length > 12) historial.pop();
+  localStorage.setItem('etl-hist', JSON.stringify(historial));
+  renderHistorial();
+}
+
+function renderHistorial(){
+  const list = document.getElementById('hist-list');
+  if(!historial.length){
+    list.innerHTML = '<div class="empty-hist">Sin ejecuciones aún.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  historial.forEach(h => {
+    const date = new Date(h.ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const item = document.createElement('div');
+    item.className = 'hist-item';
+    item.innerHTML = `
+      <div class="hi-status" style="background:${h.ok?'var(--green-l)':'var(--red-l)'}"></div>
+      <div class="hi-info">
+        <div class="hi-date">${date}</div>
+        <div class="hi-meta">${h.ok ? `${h.rows} registros · ${h.elapsed}s` : `⚠️ ${h.errMsg}`}</div>
+      </div>
+      <span class="hi-badge" style="background:${h.ok?'rgba(52,211,153,.12)':'rgba(248,113,113,.12)'};color:${h.ok?'var(--green-l)':'var(--red-l)'}">${h.ok?'OK':'Error'}</span>`;
+    list.appendChild(item);
+  });
+}
+
+function clearHistorial(){
+  historial = [];
+  localStorage.removeItem('etl-hist');
+  renderHistorial();
+}
+
+/* ── INIT ──────────────────────────────────────────────────────── */
+buildPipeline();
+buildBars();
+renderHistorial();
+log('Sistema ETL listo. Seleccioná una opción para iniciar.','dim');
+</script>
+</body>
+</html>

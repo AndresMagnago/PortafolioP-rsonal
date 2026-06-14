@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automatización n8n — 384 Group</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f0f13;--surface:#1a1a24;--border:rgba(255,255,255,0.08);--text:#f0f0f5;--muted:#8888a0;--pink:#D4537E;--pink-l:#ED93B1}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:2rem}
+.container{max-width:900px;margin:0 auto}
+.header{text-align:center;margin-bottom:2rem}
+.icon{font-size:2.5rem;margin-bottom:0.75rem}
+h1{font-size:1.8rem;font-weight:700;margin-bottom:0.5rem}
+.subtitle{color:var(--muted);font-size:14px}
+.badge{display:inline-block;background:rgba(212,83,126,0.15);border:1px solid rgba(212,83,126,0.3);color:var(--pink-l);border-radius:999px;padding:4px 14px;font-size:12px;margin-top:8px}
+.flows-tabs{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.tab{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:8px 18px;border-radius:999px;font-size:13px;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.tab.active{background:rgba(212,83,126,0.15);border-color:rgba(212,83,126,0.4);color:var(--pink-l)}
+.flow-view{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem;margin-bottom:1.5rem}
+.flow-title{font-size:1.1rem;font-weight:700;margin-bottom:0.5rem}
+.flow-desc{color:var(--muted);font-size:13px;margin-bottom:1.5rem}
+.nodes{display:flex;align-items:center;gap:0;flex-wrap:wrap;overflow-x:auto;padding-bottom:0.5rem}
+.node{display:flex;flex-direction:column;align-items:center;min-width:90px}
+.node-box{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:0.75rem 1rem;text-align:center;transition:all 0.3s;position:relative}
+.node-box.active-node{border-color:rgba(212,83,126,0.5);background:rgba(212,83,126,0.1);box-shadow:0 0 20px rgba(212,83,126,0.15)}
+.node-box.done-node{border-color:rgba(29,158,117,0.4);background:rgba(29,158,117,0.07)}
+.node-icon{font-size:1.5rem;margin-bottom:4px}
+.node-name{font-size:11px;font-weight:600;white-space:nowrap}
+.node-type{font-size:10px;color:var(--muted);margin-top:2px}
+.arrow{color:var(--muted);font-size:1.2rem;margin:0 4px;flex-shrink:0;align-self:center;padding-bottom:1.5rem}
+.arrow.active-arrow{color:var(--pink-l);animation:pulse 0.8s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.run-section{display:flex;gap:1rem;align-items:flex-start;margin-top:1.5rem;flex-wrap:wrap}
+.trigger-form{flex:1;min-width:240px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
+.trigger-form h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem}
+input[type=text],input[type=email],select,textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:9px 13px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:8px;transition:border-color 0.2s}
+input[type=text]:focus,input[type=email]:focus,select:focus,textarea:focus{border-color:rgba(212,83,126,0.4)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+select option{background:#1a1a24}
+textarea{resize:vertical;min-height:80px}
+.run-btn{width:100%;background:linear-gradient(135deg,#D4537E,#993556);color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.run-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,83,126,0.4)}
+.run-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.log-panel{flex:1;min-width:240px}
+.log-panel h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+.log-box{background:#0a0a10;border:1px solid var(--border);border-radius:12px;padding:1rem;font-family:monospace;font-size:11px;line-height:1.9;height:220px;overflow-y:auto}
+.l{color:var(--muted)}.lok{color:#5DCAA5}.linf{color:#85B7EB}.lerr{color:#F09595}.lwarn{color:#EF9F27}
+.stats-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:1rem}
+.sm{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:0.75rem;text-align:center}
+.sm-n{font-size:1.4rem;font-weight:700;color:var(--pink-l)}
+.sm-l{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.04em}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="icon">🤖</div>
+    <h1>Automatización con n8n</h1>
+    <p class="subtitle">Flujos automatizados para 384 Group — Impulsores de Negocios</p>
+    <span class="badge">⚡ 3 flujos activos</span>
+  </div>
+
+  <div class="flows-tabs">
+    <button class="tab active" onclick="showFlow(0,this)">📧 Notificaciones</button>
+    <button class="tab" onclick="showFlow(1,this)">📋 Formularios</button>
+    <button class="tab" onclick="showFlow(2,this)">📊 Métricas</button>
+  </div>
+
+  <div class="flow-view" id="flow-view">
+    <div class="flow-title" id="flow-title">Flujo 1 — Notificaciones automáticas</div>
+    <div class="flow-desc" id="flow-desc">Cuando un cliente completa el formulario de contacto en el sitio, se envía automáticamente un email de bienvenida y se crea una tarea en el CRM.</div>
+    <div class="nodes" id="nodes-container"></div>
+  </div>
+
+  <div class="run-section">
+    <div class="trigger-form">
+      <h3>Simular trigger</h3>
+      <div id="trigger-fields"></div>
+      <button class="run-btn" id="run-btn" onclick="runFlow()">▶ Ejecutar flujo</button>
+      <div class="stats-mini">
+        <div class="sm"><div class="sm-n" id="s-exec">0</div><div class="sm-l">Ejecuciones</div></div>
+        <div class="sm"><div class="sm-n" id="s-ok">0</div><div class="sm-l">Exitosas</div></div>
+        <div class="sm"><div class="sm-n" id="s-ms">0ms</div><div class="sm-l">Tiempo</div></div>
+      </div>
+    </div>
+    <div class="log-panel">
+      <h3>Log de ejecución</h3>
+      <div class="log-box" id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const flows = [
+  {
+    title:'Flujo 1 — Notificaciones automáticas',
+    desc:'Cuando un cliente completa el formulario de contacto, se envía un email de bienvenida y se crea una tarea en el CRM.',
+    nodes:[
+      {icon:'📝',name:'Webhook',type:'Trigger'},
+      {icon:'🔍',name:'Filtrar datos',type:'Function'},
+      {icon:'📧',name:'Enviar email',type:'Gmail'},
+      {icon:'📋',name:'Crear tarea',type:'CRM'},
+      {icon:'✅',name:'Confirmar',type:'Response'},
+    ],
+    fields:`<input type="text" id="f-nombre" placeholder="Nombre del cliente"><input type="email" id="f-email" placeholder="Email"><select id="f-interes"><option value="">Interés</option><option>Franquicias</option><option>Consultoría</option><option>Expansión</option></select>`,
+    steps:[
+      {delay:600,msg:'Webhook recibido — datos del formulario',type:'inf'},
+      {delay:500,msg:'Filtrando y validando campos...','type':'inf'},
+      {delay:700,msg:'Email de bienvenida enviado a cliente',type:'ok'},
+      {delay:600,msg:'Tarea creada en CRM: "Seguimiento nuevo lead"',type:'ok'},
+      {delay:400,msg:'Respuesta 200 enviada al formulario',type:'ok'},
+    ]
+  },
+  {
+    title:'Flujo 2 — Procesamiento de formularios',
+    desc:'Procesa automáticamente los formularios de inscripción a eventos y envía confirmación con QR por WhatsApp.',
+    nodes:[
+      {icon:'📋',name:'Google Forms',type:'Trigger'},
+      {icon:'⚙️',name:'Procesar data',type:'Function'},
+      {icon:'🔗',name:'Generar QR',type:'HTTP'},
+      {icon:'💬',name:'WhatsApp',type:'Twilio'},
+      {icon:'📊',name:'Sheets',type:'Google'},
+    ],
+    fields:`<input type="text" id="f-evento" placeholder="Nombre del evento"><input type="text" id="f-inscripto" placeholder="Nombre inscripto"><input type="text" id="f-tel" placeholder="Teléfono WhatsApp">`,
+    steps:[
+      {delay:500,msg:'Nuevo registro en Google Forms detectado',type:'inf'},
+      {delay:700,msg:'Procesando datos del inscripto...',type:'inf'},
+      {delay:800,msg:'QR de acceso generado exitosamente',type:'ok'},
+      {delay:600,msg:'Mensaje WhatsApp enviado con QR',type:'ok'},
+      {delay:500,msg:'Registro guardado en Google Sheets',type:'ok'},
+    ]
+  },
+  {
+    title:'Flujo 3 — Reporte de métricas digitales',
+    desc:'Todos los lunes a las 9am extrae métricas del sitio web y envía un resumen ejecutivo por email al equipo de 384 Group.',
+    nodes:[
+      {icon:'⏰',name:'Cron',type:'Schedule'},
+      {icon:'📈',name:'Analytics',type:'Google'},
+      {icon:'🧮',name:'Calcular KPIs',type:'Function'},
+      {icon:'📄',name:'Generar PDF',type:'HTML'},
+      {icon:'📧',name:'Email equipo',type:'Gmail'},
+    ],
+    fields:`<select id="f-periodo"><option>Esta semana</option><option>Última semana</option><option>Este mes</option></select><input type="text" id="f-dest" placeholder="Email destinatario">`,
+    steps:[
+      {delay:400,msg:'Cron trigger: lunes 09:00 AM',type:'inf'},
+      {delay:900,msg:'Métricas extraídas: 1,240 sesiones, 3.2% conv.',type:'ok'},
+      {delay:700,msg:'KPIs calculados: +12% vs semana anterior',type:'ok'},
+      {delay:800,msg:'Reporte PDF generado (4 páginas)',type:'ok'},
+      {delay:500,msg:'Email enviado a equipo@384group.com',type:'ok'},
+    ]
+  }
+];
+
+let currentFlow = 0;
+let execCount = 0;
+let okCount = 0;
+
+function showFlow(idx, btn){
+  currentFlow = idx;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const f = flows[idx];
+  document.getElementById('flow-title').textContent = f.title;
+  document.getElementById('flow-desc').textContent = f.desc;
+  document.getElementById('trigger-fields').innerHTML = f.fields;
+  renderNodes(f.nodes, -1);
+  document.getElementById('log').innerHTML = `<span class="l">Flujo listo. Completá los datos y ejecutá.</span>`;
+}
+
+function renderNodes(nodes, activeIdx){
+  const c = document.getElementById('nodes-container');
+  c.innerHTML = '';
+  nodes.forEach((n,i)=>{
+    const node = document.createElement('div');
+    node.className = 'node';
+    node.innerHTML = `<div class="node-box ${i===activeIdx?'active-node':i<activeIdx?'done-node':''}">
+      <div class="node-icon">${n.icon}</div>
+      <div class="node-name">${n.name}</div>
+      <div class="node-type">${n.type}</div>
+    </div>`;
+    c.appendChild(node);
+    if(i < nodes.length-1){
+      const arr = document.createElement('div');
+      arr.className = 'arrow' + (i===activeIdx?' active-arrow':'');
+      arr.textContent = '→';
+      c.appendChild(arr);
+    }
+  });
+}
+
+function log(msg, type=''){
+  const box = document.getElementById('log');
+  const span = document.createElement('span');
+  span.className = 'l'+type;
+  const t = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  span.textContent = `[${t}] ${msg}\n`;
+  box.appendChild(span);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function runFlow(){
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  document.getElementById('log').innerHTML='';
+  const f = flows[currentFlow];
+  const t0 = Date.now();
+  log('Iniciando flujo...','inf');
+
+  for(let i=0; i<f.steps.length; i++){
+    renderNodes(f.nodes, i);
+    await new Promise(r=>setTimeout(r, f.steps[i].delay));
+    log(f.steps[i].msg, f.steps[i].type);
+  }
+
+  renderNodes(f.nodes, f.nodes.length);
+  const elapsed = Date.now()-t0;
+  log('Flujo completado exitosamente ✓','ok');
+  execCount++; okCount++;
+  document.getElementById('s-exec').textContent=execCount;
+  document.getElementById('s-ok').textContent=okCount;
+  document.getElementById('s-ms').textContent=elapsed+'ms';
+  btn.disabled=false;
+}
+
+showFlow(0, document.querySelector('.tab.active'));
+</script>
+</body>
+</html>

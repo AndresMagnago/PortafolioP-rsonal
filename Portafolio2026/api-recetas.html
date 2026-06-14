@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API REST de Recetas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237c3aed'/><text y='.9em' font-size='62' x='10'>🍽️</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--s1:#13131c;--s2:#1c1c28;--s3:#252535;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#eeeef8;--muted:#7777a8;
+  --purple:#7c3aed;--purple-l:#a78bfa;--purple-ll:#c4b5fd;
+  --green:#059669;--green-l:#34d399;
+  --amber:#b45309;--amber-l:#fbbf24;
+  --red-l:#f87171;--blue-l:#60a5fa;
+  --method-get:#34d399;--method-post:#60a5fa;
+  --method-put:#fbbf24;--method-del:#f87171;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+.back{position:fixed;top:1rem;left:1rem;display:flex;align-items:center;gap:6px;background:rgba(10,10,15,.92);backdrop-filter:blur(12px);border:1px solid var(--border2);color:var(--purple-l);padding:7px 14px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;z-index:200}
+.back:hover{background:rgba(124,58,237,.15)}
+.bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.glow{position:absolute;border-radius:50%;filter:blur(120px);opacity:.1}
+.g1{width:600px;height:600px;background:#7c3aed;top:-200px;right:-100px;animation:drift 12s ease-in-out infinite}
+.g2{width:400px;height:400px;background:#059669;bottom:-100px;left:-100px;animation:drift 9s ease-in-out infinite reverse;animation-delay:-3s}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-20px)}}
+.page{position:relative;z-index:1;display:grid;grid-template-columns:300px 1fr;gap:0;min-height:100vh}
+@media(max-width:800px){.page{grid-template-columns:1fr}}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--s1);border-right:1px solid var(--border);padding:5rem 0 2rem;display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
+.sidebar-hdr{padding:0 1.25rem 1.25rem;border-bottom:1px solid var(--border)}
+.app-icon{font-size:2rem;margin-bottom:.5rem;display:block}
+.app-title{font-size:1.1rem;font-weight:800;letter-spacing:-.02em}
+.app-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.api-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);color:var(--purple-l);border-radius:999px;padding:3px 10px;font-size:10px;font-weight:700;margin-top:.6rem;letter-spacing:.04em}
+
+/* búsqueda */
+.search-wrap{padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;transition:border-color .2s}
+.search-box:focus-within{border-color:rgba(124,58,237,.4)}
+.search-box input{flex:1;background:transparent;border:none;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.search-box input::placeholder{color:var(--muted)}
+
+/* filtros cat */
+.cat-filters{padding:.75rem 1.25rem;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap}
+.cf-btn{background:var(--s2);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.cf-btn.active{background:rgba(124,58,237,.15);border-color:rgba(124,58,237,.4);color:var(--purple-l)}
+
+/* lista recetas */
+.recipe-list{flex:1;overflow-y:auto;padding:.75rem}
+.recipe-item{display:flex;align-items:center;gap:10px;padding:.75rem 1rem;border-radius:12px;cursor:pointer;transition:all .2s;position:relative;margin-bottom:4px}
+.recipe-item:hover{background:var(--s2)}
+.recipe-item.active{background:rgba(124,58,237,.12);border-left:3px solid var(--purple-l)}
+.ri-emoji{font-size:1.6rem;flex-shrink:0;width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--s3);border-radius:10px}
+.ri-info{flex:1;min-width:0}
+.ri-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.fav-btn{background:transparent;border:none;cursor:pointer;font-size:15px;padding:3px;transition:transform .2s;flex-shrink:0}
+.fav-btn:hover{transform:scale(1.3)}
+
+/* endpoints */
+.endpoints-section{padding:.75rem 1.25rem;border-top:1px solid var(--border)}
+.ep-title{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:.6rem}
+.ep-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;cursor:pointer;transition:all .2s;margin-bottom:3px}
+.ep-row:hover{background:var(--s2)}
+.method{font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.04em;flex-shrink:0}
+.m-get{background:rgba(52,211,153,.15);color:var(--method-get)}
+.m-post{background:rgba(96,165,250,.15);color:var(--method-post)}
+.m-put{background:rgba(251,191,36,.15);color:var(--method-put)}
+.m-del{background:rgba(248,113,113,.15);color:var(--method-del)}
+.ep-path{font-size:11px;color:var(--muted);font-family:monospace}
+
+/* ── MAIN ── */
+.main{padding:5rem 2rem 3rem;overflow-y:auto}
+
+/* tabs */
+.main-tabs{display:flex;gap:8px;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0}
+.mtab{padding:.6rem 1.1rem;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s}
+.mtab.active{color:var(--purple-l);border-bottom-color:var(--purple-l)}
+
+/* panel detalle */
+.detail-panel{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.detail-hero{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:1.75rem;margin-bottom:1.25rem;display:flex;gap:1.5rem;align-items:flex-start}
+.dh-emoji{font-size:4rem;width:90px;height:90px;background:var(--s2);border-radius:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dh-info{flex:1}
+.dh-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.6rem}
+.dh-cat{font-size:10px;padding:3px 9px;border-radius:999px;font-weight:700;background:rgba(124,58,237,.15);color:var(--purple-l)}
+.dh-dif{font-size:10px;padding:3px 9px;border-radius:999px;font-weight:700}
+.dh-title{font-size:1.5rem;font-weight:800;margin-bottom:.4rem}
+.dh-desc{font-size:13px;color:var(--muted);line-height:1.6}
+.dh-stats{display:flex;gap:.75rem;margin-top:.9rem;flex-wrap:wrap}
+.dh-stat{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:.5rem .85rem;font-size:12px;display:flex;align-items:center;gap:6px}
+.dh-stat-val{font-weight:700}
+.fav-big{background:transparent;border:1px solid var(--border);border-radius:10px;padding:.5rem .85rem;font-size:12px;cursor:pointer;font-family:inherit;color:var(--muted);transition:all .2s;display:flex;align-items:center;gap:6px}
+.fav-big.on{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.4);color:var(--amber-l)}
+.fav-big:hover{border-color:var(--border2)}
+
+/* grid ingredientes + pasos */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem}
+@media(max-width:700px){.detail-grid{grid-template-columns:1fr}}
+.dg-panel{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:1.25rem}
+.dg-title{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-bottom:.85rem}
+.ing-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:.35rem 0;border-bottom:1px solid var(--border);color:var(--muted)}
+.ing-item:last-child{border-bottom:none}
+.ing-dot{width:6px;height:6px;border-radius:50%;background:var(--purple-l);flex-shrink:0}
+.step-item{display:flex;gap:10px;margin-bottom:.75rem;align-items:flex-start}
+.step-num{width:22px;height:22px;border-radius:6px;background:rgba(124,58,237,.2);color:var(--purple-l);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-txt{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* JSON viewer */
+.json-panel{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:1.25rem;margin-bottom:1.25rem}
+.json-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem}
+.json-title{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.copy-btn{background:var(--s2);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .2s}
+.copy-btn:hover{border-color:var(--purple-l);color:var(--purple-l)}
+.copy-btn.copied{border-color:var(--green-l);color:var(--green-l)}
+.json-box{background:#0d0d14;border-radius:10px;padding:1rem;font-family:'Courier New',monospace;font-size:12px;line-height:1.8;overflow-x:auto;white-space:pre}
+.jk{color:#a78bfa}.js{color:#34d399}.jn{color:#fbbf24}.jb{color:#60a5fa}
+
+/* panel favoritos */
+.favs-panel{animation:fadeIn .3s ease}
+.fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.fav-card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:1.1rem;cursor:pointer;transition:all .2s}
+.fav-card:hover{border-color:rgba(124,58,237,.3);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.fc-top{display:flex;align-items:center;gap:10px;margin-bottom:.6rem}
+.fc-emoji{font-size:1.8rem;width:44px;height:44px;background:var(--s2);border-radius:12px;display:flex;align-items:center;justify-content:center}
+.fc-name{font-size:14px;font-weight:700}
+.fc-meta{font-size:12px;color:var(--muted)}
+.fc-rem{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-top:.5rem;font-family:inherit;padding:0;transition:color .2s}
+.fc-rem:hover{color:var(--red-l)}
+.empty-favs{text-align:center;padding:3rem;color:var(--muted)}
+.empty-favs-ico{font-size:3rem;margin-bottom:.75rem;opacity:.4}
+
+/* panel agregar */
+.add-panel{animation:fadeIn .3s ease}
+.add-form{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:1.5rem}
+.af-title{font-size:14px;font-weight:700;margin-bottom:1.25rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.field input,.field select,.field textarea{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(124,58,237,.4)}
+.field input::placeholder,.field textarea::placeholder{color:var(--muted)}
+.field select option{background:#1c1c28}
+.field textarea{resize:vertical;min-height:80px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.submit-btn{background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;border:none;border-radius:11px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;width:100%;margin-top:.5rem}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,.35)}
+.toast{position:fixed;bottom:2rem;right:2rem;background:#059669;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);transition:all .3s;z-index:999;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* panel endpoints */
+.ep-panel{animation:fadeIn .3s ease}
+.ep-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:.75rem;cursor:pointer;transition:all .2s}
+.ep-card:hover{border-color:rgba(124,58,237,.25);background:var(--s2)}
+.ep-card-top{display:flex;align-items:center;gap:10px;margin-bottom:.5rem}
+.ep-method{font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px;letter-spacing:.04em}
+.ep-path-big{font-size:14px;font-family:monospace;color:var(--text)}
+.ep-desc{font-size:13px;color:var(--muted);margin-bottom:.6rem}
+.ep-resp{background:#0d0d14;border-radius:8px;padding:.75rem 1rem;font-family:monospace;font-size:11px;line-height:1.7;overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="bg-glow"><div class="glow g1"></div><div class="glow g2"></div></div>
+<a class="back" href="index.html">← Portfolio</a>
+
+<div class="page">
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <div class="sidebar-hdr">
+    <span class="app-icon">🍽️</span>
+    <div class="app-title">API REST de Recetas</div>
+    <div class="app-sub">Node.js · Express · PostgreSQL · JWT</div>
+    <span class="api-badge">🔗 api.recetas.dev/v1</span>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <span style="font-size:14px;color:var(--muted)">🔍</span>
+      <input type="text" id="search-inp" placeholder="Buscar recetas..." oninput="filterRecipes()">
+    </div>
+  </div>
+
+  <div class="cat-filters" id="cat-filters"></div>
+
+  <div class="recipe-list" id="recipe-list"></div>
+
+  <div class="endpoints-section">
+    <div class="ep-title">Endpoints</div>
+    <div class="ep-row" onclick="showTab('endpoints')"><span class="method m-get">GET</span><span class="ep-path">/recetas</span></div>
+    <div class="ep-row" onclick="showTab('endpoints')"><span class="method m-get">GET</span><span class="ep-path">/recetas/:id</span></div>
+    <div class="ep-row" onclick="showTab('add')"><span class="method m-post">POST</span><span class="ep-path">/recetas</span></div>
+    <div class="ep-row" onclick="showTab('endpoints')"><span class="method m-put">PUT</span><span class="ep-path">/recetas/:id</span></div>
+    <div class="ep-row" onclick="showTab('endpoints')"><span class="method m-del">DEL</span><span class="ep-path">/recetas/:id</span></div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="main-tabs">
+    <button class="mtab active" id="tab-detail" onclick="showTab('detail')">📄 Detalle</button>
+    <button class="mtab" id="tab-favs" onclick="showTab('favs')">⭐ Favoritos <span id="fav-cnt" style="background:rgba(251,191,36,.2);color:#fbbf24;border-radius:999px;padding:1px 7px;font-size:10px;margin-left:4px">0</span></button>
+    <button class="mtab" id="tab-add" onclick="showTab('add')">+ Agregar</button>
+    <button class="mtab" id="tab-endpoints" onclick="showTab('endpoints')">⚡ Endpoints</button>
+  </div>
+
+  <div id="panel-detail" class="detail-panel"></div>
+  <div id="panel-favs" class="favs-panel" style="display:none"></div>
+  <div id="panel-add" class="add-panel" style="display:none"></div>
+  <div id="panel-endpoints" class="ep-panel" style="display:none"></div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── DATOS ─────────────────────────────────────────────────────── */
+let recipes = [
+  {id:1,name:'Milanesa a la napolitana',cat:'Carnes',emoji:'🥩',dif:'Fácil',time:35,portions:4,
+   desc:'Clásico de la cocina argentina: milanesa de ternera con salsa, jamón y queso gratinado.',
+   ing:['4 milanesas de ternera','Salsa de tomate','Jamón cocido','Queso mozzarella','Pan rallado','2 huevos','Orégano','Aceite para freír'],
+   steps:['Pasar las milanesas por huevo batido y pan rallado condimentado.','Freír en aceite caliente hasta dorar de ambos lados.','Disponer en fuente, cubrir con salsa de tomate.','Colocar jamón y queso mozzarella encima.','Gratinar en horno a 200°C por 8 minutos.']},
+  {id:2,name:'Empanadas tucumanas',cat:'Masas',emoji:'🥟',dif:'Media',time:90,portions:12,
+   desc:'Las auténticas empanadas tucumanas con carne jugosa, condimentos y cebolla de verdeo.',
+   ing:['500g carne picada','2 cebollas','Cebolla de verdeo','Pimentón','Comino','Huevos duros','Aceitunas','Tapas de empanada'],
+   steps:['Rehogar la cebolla en aceite hasta transparentar.','Agregar la carne y cocinar a fuego fuerte.','Condimentar con pimentón, comino, sal y pimienta.','Incorporar huevo duro picado y aceitunas.','Rellenar las tapas, repulgar y hornear a 200°C por 25 min.']},
+  {id:3,name:'Locro criollo',cat:'Guisos',emoji:'🍲',dif:'Media',time:180,portions:8,
+   desc:'Guiso típico del noroeste argentino, contundente y perfecto para días fríos.',
+   ing:['500g maíz blanco','300g porotos','300g panceta','2 chorizos colorados','400g zapallo','Cebolla de verdeo','Pimentón'],
+   steps:['Remojar el maíz y los porotos la noche anterior.','Cocinar el maíz y porotos en agua abundante por 1 hora.','Agregar la panceta, chorizo y zapallo.','Cocinar a fuego lento por 1 hora más revolviendo.','Servir con la grasa colorada por encima.']},
+  {id:4,name:'Alfajores de maicena',cat:'Postres',emoji:'🍪',dif:'Fácil',time:60,portions:20,
+   desc:'Los infaltables alfajores caseros rellenos de dulce de leche y rebozados en coco.',
+   ing:['300g maicena','100g harina','200g manteca','100g azúcar','3 yemas','Ralladura limón','Dulce de leche','Coco rallado'],
+   steps:['Batir manteca con azúcar hasta cremar.','Agregar yemas, ralladura y mezclar.','Incorporar maicena y harina tamizadas.','Estirar y cortar con cortante redondo.','Hornear a 160°C por 15 min. Rellenar y pasar por coco.']},
+  {id:5,name:'Asado con cuero',cat:'Carnes',emoji:'🔥',dif:'Media',time:240,portions:10,
+   desc:'El rey de los asados argentinos. Costillas, vacío y achuras a las brasas.',
+   ing:['Costillas de ternera','Vacío','Chorizo criollo','Morcilla','Chimichurri','Sal gruesa','Leña de quebracho'],
+   steps:['Encender el fuego con tiempo para tener buenas brasas.','Colocar las carnes sobre la parrilla, primero achuras.','Salar las carnes con sal gruesa de ambos lados.','Cocinar a fuego medio, dar vuelta una sola vez.','Servir con chimichurri y pan casero.']},
+  {id:6,name:'Medialunas de manteca',cat:'Masas',emoji:'🥐',dif:'Difícil',time:120,portions:24,
+   desc:'Las clásicas medialunas porteñas: hojaldradas, brillantes y con ese toque dulce inconfundible.',
+   ing:['500g harina 000','200g manteca','25g levadura','200ml leche','80g azúcar','2 huevos','10g sal','Almíbar para pintar'],
+   steps:['Activar la levadura en leche tibia con azúcar.','Amasar todos los ingredientes hasta masa lisa.','Laminar con la manteca fría (proceso de hojaldrado).','Cortar triángulos y enrollar desde la base.','Dejar leudar 1 hora, pintar con huevo y hornear a 190°C.']},
+];
+
+let favs = JSON.parse(localStorage.getItem('recetas-favs') || '[]');
+let selectedId = 1;
+let activeFilter = 'Todas';
+let currentTab = 'detail';
+let nextId = recipes.length + 1;
+
+/* ── CATEGORÍAS ─────────────────────────────────────────────────── */
+function buildCatFilters(){
+  const cats = ['Todas', ...new Set(recipes.map(r => r.cat))];
+  const wrap = document.getElementById('cat-filters');
+  wrap.innerHTML = '';
+  cats.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'cf-btn' + (c === activeFilter ? ' active' : '');
+    btn.textContent = c;
+    btn.onclick = () => {
+      activeFilter = c;
+      document.querySelectorAll('.cf-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      buildRecipeList();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+/* ── LISTA ──────────────────────────────────────────────────────── */
+function filterRecipes(){
+  buildRecipeList();
+}
+
+function getFiltered(){
+  const q = document.getElementById('search-inp').value.toLowerCase();
+  return recipes.filter(r => {
+    const matchCat = activeFilter === 'Todas' || r.cat === activeFilter;
+    const matchQ   = !q || r.name.toLowerCase().includes(q) || r.cat.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+}
+
+function buildRecipeList(){
+  const list = document.getElementById('recipe-list');
+  const filtered = getFiltered();
+  list.innerHTML = '';
+  if(!filtered.length){
+    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:13px">Sin resultados</div>';
+    return;
+  }
+  filtered.forEach(r => {
+    const isFav = favs.includes(r.id);
+    const item = document.createElement('div');
+    item.className = 'recipe-item' + (r.id === selectedId ? ' active' : '');
+    item.onclick = () => selectRecipe(r.id);
+    item.innerHTML = `
+      <div class="ri-emoji">${r.emoji}</div>
+      <div class="ri-info">
+        <div class="ri-name">${r.name}</div>
+        <div class="ri-meta">${r.cat} · ${r.time} min · ${r.portions} porciones</div>
+      </div>
+      <button class="fav-btn" onclick="event.stopPropagation();toggleFav(${r.id})">${isFav ? '⭐' : '☆'}</button>`;
+    list.appendChild(item);
+  });
+}
+
+/* ── SELECCIONAR RECETA ─────────────────────────────────────────── */
+function selectRecipe(id){
+  selectedId = id;
+  buildRecipeList();
+  showTab('detail');
+}
+
+function renderDetail(){
+  const r = recipes.find(x => x.id === selectedId);
+  if(!r){ document.getElementById('panel-detail').innerHTML = '<div style="color:var(--muted);padding:2rem">Seleccioná una receta</div>'; return; }
+  const isFav = favs.includes(r.id);
+  const difColor = r.dif === 'Fácil' ? 'var(--green-l)' : r.dif === 'Media' ? 'var(--amber-l)' : 'var(--red-l)';
+
+  const jsonStr = `{
+  <span class="jk">"id"</span>: <span class="jn">${r.id}</span>,
+  <span class="jk">"name"</span>: <span class="js">"${r.name}"</span>,
+  <span class="jk">"categoria"</span>: <span class="js">"${r.cat}"</span>,
+  <span class="jk">"dificultad"</span>: <span class="js">"${r.dif}"</span>,
+  <span class="jk">"tiempo_min"</span>: <span class="jn">${r.time}</span>,
+  <span class="jk">"porciones"</span>: <span class="jn">${r.portions}</span>,
+  <span class="jk">"ingredientes"</span>: [${r.ing.map(i => `<span class="js">"${i}"</span>`).join(', ')}],
+  <span class="jk">"pasos"</span>: <span class="jn">${r.steps.length} pasos</span>
+}`;
+
+  document.getElementById('panel-detail').innerHTML = `
+    <div class="detail-hero">
+      <div class="dh-emoji">${r.emoji}</div>
+      <div class="dh-info">
+        <div class="dh-cats">
+          <span class="dh-cat">${r.cat}</span>
+          <span class="dh-dif" style="background:${difColor}22;color:${difColor};font-size:10px;padding:3px 9px;border-radius:999px;font-weight:700">${r.dif}</span>
+        </div>
+        <div class="dh-title">${r.name}</div>
+        <div class="dh-desc">${r.desc}</div>
+        <div class="dh-stats">
+          <div class="dh-stat">⏱️ <span class="dh-stat-val">${r.time} min</span></div>
+          <div class="dh-stat">🍽️ <span class="dh-stat-val">${r.portions} porciones</span></div>
+          <div class="dh-stat">🥘 <span class="dh-stat-val">${r.ing.length} ingredientes</span></div>
+          <button class="fav-big ${isFav ? 'on' : ''}" onclick="toggleFav(${r.id});renderDetail()">
+            ${isFav ? '⭐ En favoritos' : '☆ Agregar a favoritos'}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="dg-panel">
+        <div class="dg-title">Ingredientes</div>
+        ${r.ing.map(i => `<div class="ing-item"><div class="ing-dot"></div>${i}</div>`).join('')}
+      </div>
+      <div class="dg-panel">
+        <div class="dg-title">Pasos</div>
+        ${r.steps.map((s,i) => `<div class="step-item"><div class="step-num">${i+1}</div><div class="step-txt">${s}</div></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="json-panel">
+      <div class="json-hdr">
+        <span class="json-title">Respuesta JSON — GET /recetas/${r.id}</span>
+        <button class="copy-btn" id="copy-btn" onclick="copyJson()">📋 Copiar</button>
+      </div>
+      <div class="json-box" id="json-content">${jsonStr}</div>
+    </div>`;
+}
+
+function copyJson(){
+  const r = recipes.find(x => x.id === selectedId);
+  const plain = JSON.stringify({id:r.id,name:r.name,categoria:r.cat,dificultad:r.dif,tiempo_min:r.time,porciones:r.portions,ingredientes:r.ing},null,2);
+  navigator.clipboard?.writeText(plain).catch(()=>{});
+  const btn = document.getElementById('copy-btn');
+  if(btn){ btn.textContent = '✓ Copiado'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent = '📋 Copiar'; btn.classList.remove('copied'); }, 1800); }
+}
+
+/* ── FAVORITOS ──────────────────────────────────────────────────── */
+function toggleFav(id){
+  if(favs.includes(id)) favs = favs.filter(f => f !== id);
+  else favs.push(id);
+  localStorage.setItem('recetas-favs', JSON.stringify(favs));
+  updateFavCount();
+  buildRecipeList();
+  showToast(favs.includes(id) ? '⭐ Agregado a favoritos' : 'Eliminado de favoritos');
+}
+
+function updateFavCount(){
+  document.getElementById('fav-cnt').textContent = favs.length;
+}
+
+function renderFavs(){
+  const panel = document.getElementById('panel-favs');
+  const favRecipes = recipes.filter(r => favs.includes(r.id));
+  if(!favRecipes.length){
+    panel.innerHTML = `<div class="empty-favs"><div class="empty-favs-ico">⭐</div><p>Todavía no tenés favoritos.</p><p style="font-size:12px;margin-top:6px">Hacé clic en ☆ en cualquier receta para guardarla.</p></div>`;
+    return;
+  }
+  panel.innerHTML = `<div class="fav-grid">${favRecipes.map(r => `
+    <div class="fav-card" onclick="selectRecipe(${r.id})">
+      <div class="fc-top">
+        <div class="fc-emoji">${r.emoji}</div>
+        <div><div class="fc-name">${r.name}</div><div class="fc-meta">${r.cat} · ${r.time} min</div></div>
+      </div>
+      <button class="fc-rem" onclick="event.stopPropagation();toggleFav(${r.id});renderFavs()">✕ Quitar de favoritos</button>
+    </div>`).join('')}</div>`;
+}
+
+/* ── AGREGAR RECETA ─────────────────────────────────────────────── */
+function renderAdd(){
+  document.getElementById('panel-add').innerHTML = `
+    <div class="add-form">
+      <div class="af-title">POST /recetas — Agregar nueva receta</div>
+      <div class="row2">
+        <div class="field"><label>Nombre</label><input id="f-name" placeholder="Ej: Carbonada"></div>
+        <div class="field"><label>Categoría</label>
+          <select id="f-cat"><option>Carnes</option><option>Masas</option><option>Guisos</option><option>Postres</option><option>Ensaladas</option><option>Sopas</option></select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Tiempo (minutos)</label><input type="number" id="f-time" placeholder="45" min="5"></div>
+        <div class="field"><label>Porciones</label><input type="number" id="f-portions" placeholder="4" min="1"></div>
+      </div>
+      <div class="field"><label>Dificultad</label>
+        <select id="f-dif"><option>Fácil</option><option>Media</option><option>Difícil</option></select>
+      </div>
+      <div class="field"><label>Descripción</label><textarea id="f-desc" placeholder="Breve descripción de la receta..."></textarea></div>
+      <div class="field"><label>Emoji (1 carácter)</label><input id="f-emoji" placeholder="🍝" maxlength="2" style="width:80px"></div>
+      <button class="submit-btn" onclick="addRecipe()">📤 POST — Agregar receta</button>
+    </div>`;
+}
+
+function addRecipe(){
+  const name = document.getElementById('f-name').value.trim();
+  const desc = document.getElementById('f-desc').value.trim();
+  if(!name){ showToast('⚠️ El nombre es requerido'); return; }
+  const r = {
+    id: nextId++,
+    name,
+    cat:      document.getElementById('f-cat').value,
+    emoji:    document.getElementById('f-emoji').value || '🍽️',
+    dif:      document.getElementById('f-dif').value,
+    time:     parseInt(document.getElementById('f-time').value) || 30,
+    portions: parseInt(document.getElementById('f-portions').value) || 4,
+    desc:     desc || 'Receta agregada por el usuario.',
+    ing:  ['Ingrediente 1','Ingrediente 2','Ingrediente 3'],
+    steps:['Paso 1: preparar los ingredientes.','Paso 2: cocinar según la técnica.','Paso 3: emplatar y servir.'],
+  };
+  recipes.push(r);
+  selectedId = r.id;
+  buildCatFilters();
+  buildRecipeList();
+  updateFavCount();
+  showToast('✓ Receta "'+name+'" agregada via POST /recetas');
+  showTab('detail');
+}
+
+/* ── ENDPOINTS ──────────────────────────────────────────────────── */
+function renderEndpoints(){
+  const eps = [
+    {method:'GET',cls:'m-get',path:'/recetas',desc:'Retorna todas las recetas. Acepta query params: ?cat=Carnes&dif=Fácil',resp:`[ { "id": 1, "name": "Milanesa", "cat": "Carnes" }, ... ]`},
+    {method:'GET',cls:'m-get',path:'/recetas/:id',desc:'Retorna el detalle completo de una receta por ID.',resp:`{ "id": 1, "name": "Milanesa a la napolitana", "ingredientes": [...] }`},
+    {method:'POST',cls:'m-post',path:'/recetas',desc:'Crea una nueva receta. Requiere autenticación JWT. Body: { name, cat, tiempo_min, porciones, ingredientes }',resp:`{ "message": "Receta creada", "id": 7, "status": 201 }`},
+    {method:'PUT',cls:'m-put',path:'/recetas/:id',desc:'Actualiza una receta existente. Requiere autenticación JWT y permisos de autor.',resp:`{ "message": "Receta actualizada", "updated": true }`},
+    {method:'DELETE',cls:'m-del',path:'/recetas/:id',desc:'Elimina una receta. Requiere autenticación JWT y rol de administrador.',resp:`{ "message": "Receta eliminada", "deleted": true }`},
+    {method:'POST',cls:'m-post',path:'/auth/login',desc:'Autentica un usuario y retorna el token JWT.',resp:`{ "token": "eyJhbGci...", "expires_in": 3600 }`},
+  ];
+  document.getElementById('panel-endpoints').innerHTML = eps.map(e => `
+    <div class="ep-card">
+      <div class="ep-card-top">
+        <span class="ep-method ${e.cls}">${e.method}</span>
+        <span class="ep-path-big">${e.path}</span>
+      </div>
+      <div class="ep-desc">${e.desc}</div>
+      <div class="ep-resp"><span style="color:#a78bfa">// Respuesta</span><br>${e.resp}</div>
+    </div>`).join('');
+}
+
+/* ── TABS ───────────────────────────────────────────────────────── */
+function showTab(tab){
+  currentTab = tab;
+  ['detail','favs','add','endpoints'].forEach(t => {
+    document.getElementById('panel-'+t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-'+t)?.classList.toggle('active', t === tab);
+  });
+  if(tab === 'detail')    renderDetail();
+  if(tab === 'favs')      renderFavs();
+  if(tab === 'add')       renderAdd();
+  if(tab === 'endpoints') renderEndpoints();
+}
+
+/* ── TOAST ──────────────────────────────────────────────────────── */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ── INIT ───────────────────────────────────────────────────────── */
+buildCatFilters();
+buildRecipeList();
+updateFavCount();
+renderDetail();
+</script>
+</body>
+</html>

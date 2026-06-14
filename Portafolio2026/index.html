@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Andrés Magnago — Portfolio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237F77DD'/><text y='.85em' font-size='52' x='8' fill='white' font-family='Arial' font-weight='bold'>AM</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* ── DARK MODE (default) ─────────────────────────────────────────── */
+:root{
+  --bg:#0f0f13;--surface:#1a1a24;--border:rgba(255,255,255,0.08);
+  --text:#f0f0f5;--muted:#8888a0;--card-hover:rgba(255,255,255,0.05);
+  --nav-bg:rgba(15,15,19,0.85);--shadow:rgba(0,0,0,0.4);
+}
+
+/* ── LIGHT MODE ──────────────────────────────────────────────────── */
+[data-theme="light"]{
+  --bg:#f4f4f8;--surface:#ffffff;--border:rgba(0,0,0,0.08);
+  --text:#1a1a2e;--muted:#666688;--card-hover:rgba(0,0,0,0.03);
+  --nav-bg:rgba(244,244,248,0.9);--shadow:rgba(0,0,0,0.12);
+}
+
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden;transition:background 0.3s,color 0.3s}
+
+/* ── NAV ─────────────────────────────────────────────────────────── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0.85rem 2rem;display:flex;align-items:center;justify-content:space-between;background:var(--nav-bg);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);transition:background 0.3s}
+.nav-logo{font-weight:700;font-size:1.1rem;letter-spacing:-0.02em;color:var(--text)}
+.nav-logo span{color:#AFA9EC}
+.nav-links{display:flex;gap:1.2rem;align-items:center}
+.nav-link{color:var(--muted);font-size:14px;cursor:pointer;transition:color 0.2s;background:none;border:none;font-family:inherit}
+.nav-link:hover{color:var(--text)}
+
+/* controles derecha */
+.nav-controls{display:flex;align-items:center;gap:8px}
+
+/* toggle idioma */
+.lang-toggle{display:flex;background:rgba(127,119,221,0.1);border:1px solid rgba(127,119,221,0.25);border-radius:8px;overflow:hidden}
+.lang-btn{padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:inherit;transition:all 0.2s}
+.lang-btn.active{background:rgba(127,119,221,0.3);color:#AFA9EC}
+
+/* toggle tema */
+.theme-toggle{width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;color:var(--text)}
+.theme-toggle:hover{border-color:rgba(127,119,221,0.4);background:rgba(127,119,221,0.1)}
+
+.nav-cta{background:rgba(127,119,221,0.15);border:1px solid rgba(127,119,221,0.4);color:#AFA9EC;padding:7px 14px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;text-decoration:none;white-space:nowrap}
+.nav-cta:hover{background:rgba(127,119,221,0.3)}
+
+/* ── HERO ────────────────────────────────────────────────────────── */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);animation:float 8s ease-in-out infinite}
+.orb1{width:500px;height:500px;background:#7F77DD;top:-100px;left:-150px;opacity:0.18;animation-delay:0s}
+.orb2{width:400px;height:400px;background:#1D9E75;bottom:-80px;right:-100px;opacity:0.15;animation-delay:3s}
+.orb3{width:300px;height:300px;background:#D4537E;top:40%;left:60%;opacity:0.12;animation-delay:5s}
+[data-theme="light"] .orb1{opacity:0.08}
+[data-theme="light"] .orb2{opacity:0.07}
+[data-theme="light"] .orb3{opacity:0.06}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.05)}}
+.hero-content{position:relative;z-index:1}
+.badge{display:inline-block;background:rgba(127,119,221,0.15);border:1px solid rgba(127,119,221,0.4);color:#AFA9EC;border-radius:999px;padding:6px 18px;font-size:13px;margin-bottom:1.5rem;animation:fadeDown 0.6s ease both}
+.hero h1{font-size:clamp(2.5rem,7vw,5rem);font-weight:700;line-height:1.1;margin-bottom:1rem;animation:fadeDown 0.7s 0.1s ease both;color:var(--text)}
+.gradient-text{background:linear-gradient(135deg,#AFA9EC,#5DCAA5,#F0997B);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:1.15rem;color:var(--muted);max-width:520px;margin:0 auto 2.5rem;line-height:1.7;animation:fadeDown 0.7s 0.2s ease both}
+.hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;animation:fadeDown 0.7s 0.3s ease both}
+.btn-primary{background:linear-gradient(135deg,#7F77DD,#534AB7);color:#fff;border:none;padding:13px 28px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;font-family:inherit}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(127,119,221,0.4)}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border);padding:13px 28px;border-radius:12px;font-size:15px;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.btn-secondary:hover{border-color:rgba(127,119,221,0.4);background:rgba(127,119,221,0.08)}
+.stats{display:flex;gap:2rem;justify-content:center;margin-top:3rem;flex-wrap:wrap;animation:fadeDown 0.7s 0.4s ease both}
+.stat-num{font-size:2rem;font-weight:700;color:#AFA9EC}
+.stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px}
+.scroll-hint{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:12px;animation:fadeDown 1s 1s ease both;z-index:1}
+.scroll-dot{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:bounce 1.5s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+
+/* ── SECTIONS ────────────────────────────────────────────────────── */
+section{padding:5rem 2rem;max-width:1100px;margin:0 auto}
+.section-label{font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:#AFA9EC;font-weight:600;margin-bottom:0.75rem}
+.section-title{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:700;margin-bottom:0.75rem;color:var(--text)}
+.section-sub{color:var(--muted);font-size:1rem;line-height:1.6;max-width:540px;margin-bottom:3rem}
+
+/* ── ABOUT ───────────────────────────────────────────────────────── */
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
+@media(max-width:640px){.about-grid{grid-template-columns:1fr}}
+.about-img{background:var(--surface);border:1px solid var(--border);border-radius:20px;height:280px;display:flex;align-items:center;justify-content:center;font-size:5rem;position:relative;overflow:hidden;transition:background 0.3s}
+.about-img::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(127,119,221,0.1),rgba(29,158,117,0.1))}
+.about-img{
+  background:var(--surface);
+  border:2px solid rgba(127,119,221,0.35);
+  border-radius:20px;
+  height:380px;
+  overflow:hidden;
+  position:relative;
+}
+
+.about-img img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 20%;
+  transition:transform .4s ease;
+}
+
+.about-img:hover img{
+  transform:scale(1.05);
+}
+.about-list{display:flex;flex-direction:column;gap:12px;margin-top:1.5rem}
+.about-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
+.about-item::before{content:'✓';color:#5DCAA5;font-weight:700;flex-shrink:0}
+
+
+/* ── SKILLS ──────────────────────────────────────────────────────── */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.skill-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;text-align:center;transition:all 0.25s;cursor:default}
+.skill-card:hover{border-color:rgba(127,119,221,0.4);transform:translateY(-4px);box-shadow:0 8px 24px var(--shadow)}
+.skill-icon{font-size:28px;margin-bottom:10px}
+.skill-name{font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.skill-level{font-size:11px;color:var(--muted)}
+.skill-bar{height:3px;background:var(--border);border-radius:99px;margin-top:10px;overflow:hidden}
+.skill-fill{height:100%;border-radius:99px;width:0%;transition:width 1.2s ease}
+
+/* ── PROJECTS ────────────────────────────────────────────────────── */
+.projects-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:2rem}
+.filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:999px;font-size:13px;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.filter-btn.active,.filter-btn:hover{background:rgba(127,119,221,0.15);border-color:rgba(127,119,221,0.5);color:#AFA9EC}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.project-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all 0.3s;opacity:0;transform:translateY(20px);animation:cardIn 0.4s ease forwards}
+@keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+.project-card:hover{border-color:rgba(127,119,221,0.3);transform:translateY(-6px);box-shadow:0 20px 40px var(--shadow)}
+.project-thumb{height:180px;display:flex;align-items:center;justify-content:center;font-size:3.5rem;position:relative;overflow:hidden}
+.project-body{padding:1.25rem}
+.project-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tag{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:500}
+.project-title{font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--text)}
+.project-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.project-links{display:flex;gap:8px}
+.link-btn{flex:1;text-align:center;padding:8px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all 0.2s;font-family:inherit;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px}
+.link-btn:hover{background:var(--card-hover);color:var(--text);border-color:rgba(127,119,221,0.3)}
+.link-btn.pb{background:rgba(127,119,221,0.15);border-color:rgba(127,119,221,0.4);color:#AFA9EC}
+.link-btn.pb:hover{background:rgba(127,119,221,0.3)}
+
+/* ── CONTACT ─────────────────────────────────────────────────────── */
+.contact-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:3rem;text-align:center;position:relative;overflow:hidden;transition:background 0.3s}
+.contact-box::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(127,119,221,0.05),rgba(29,158,117,0.05));pointer-events:none}
+.contact-title{font-size:2rem;font-weight:700;margin-bottom:0.75rem;color:var(--text)}
+.contact-sub{color:var(--muted);margin-bottom:2rem}
+.contact-links{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.contact-link{display:flex;align-items:center;gap:8px;padding:12px 20px;border-radius:12px;border:1px solid var(--border);color:var(--text);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;background:transparent;text-decoration:none}
+.contact-link:hover{border-color:rgba(127,119,221,0.4);background:rgba(127,119,221,0.08);transform:translateY(-2px)}
+
+/* ── FOOTER ──────────────────────────────────────────────────────── */
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:13px}
+footer a{color:#AFA9EC;text-decoration:none;margin:0 4px}
+footer a:hover{text-decoration:underline}
+
+/* ── ANIMATIONS ──────────────────────────────────────────────────── */
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(24px);transition:all 0.6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────── */
+@media(max-width:600px){
+  .nav-links{display:none}
+  .nav-controls{gap:6px}
+  .lang-btn{padding:5px 8px;font-size:11px}
+}
+</style>
+</head>
+<body data-theme="dark" data-lang="es">
+
+<nav>
+  <div class="nav-logo">AM<span>.</span>dev</div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="goTo('about')" data-i="nav_about">Sobre mí</button>
+    <button class="nav-link" onclick="goTo('skills')" data-i="nav_skills">Skills</button>
+    <button class="nav-link" onclick="goTo('projects')" data-i="nav_projects">Proyectos</button>
+    <button class="nav-link" onclick="goTo('contact')" data-i="nav_contact">Contacto</button>
+  </div>
+  <div class="nav-controls">
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btn-es" onclick="setLang('es')">ES</button>
+      <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+    </div>
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+    <a class="nav-cta" href="https://www.linkedin.com/in/andres-magnago-975214185/" target="_blank" data-i="nav_hire">Contratar →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="home">
+  <div class="hero-bg">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+  <div class="hero-content">
+    <div class="badge" data-i="hero_badge">👋 Disponible para trabajar</div>
+    <h1 data-i="hero_h1">Hola, soy<br><span class="gradient-text">Andrés Magnago</span></h1>
+    <p data-i="hero_sub">Desarrollador web full stack apasionado por crear experiencias digitales modernas, rápidas y accesibles.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="goTo('projects')" data-i="hero_btn1">Ver proyectos</button>
+      <button class="btn-secondary" onclick="goTo('contact')" data-i="hero_btn2">Contactarme</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="cnt-projects">0</div><div class="stat-label" data-i="stat_proj">Proyectos</div></div>
+      <div class="stat"><div class="stat-num" id="cnt-tech">0</div><div class="stat-label" data-i="stat_tech">Tecnologías</div></div>
+      <div class="stat"><div class="stat-num" id="cnt-months">0</div><div class="stat-label" data-i="stat_months">Meses de estudio</div></div>
+    </div>
+  </div>
+  <div class="scroll-hint"><div class="scroll-dot"></div><span data-i="scroll">Scroll</span></div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="reveal">
+    <div class="section-label" data-i="about_label">Sobre mí</div>
+    <div class="section-title" data-i="about_title">Estudiante y desarrollador</div>
+    <div class="section-sub" data-i="about_sub">Actualmente cursando la Licenciatura en Informática en Universidad Siglo 21, construyendo proyectos reales mientras aprendo.</div>
+  </div>
+  <div class="about-grid reveal">
+    <div class="about-img">
+    <img src="assets/foton64.JPG" alt="Andrés Magnago">
+</div>
+    <div>
+      <p style="color:var(--muted);line-height:1.8;font-size:15px" data-i="about_body">Soy de Villa General Belgrano, Córdoba, Argentina. Me especializo en desarrollo web front end y back end, con foco en crear productos que sean tanto funcionales como visualmente atractivos.</p>
+      <div class="about-list">
+        <div class="about-item" data-i="about_li1">Desarrollo web moderno con HTML, CSS y JavaScript</div>
+        <div class="about-item" data-i="about_li2">Backend con Node.js y bases de datos SQL</div>
+        <div class="about-item" data-i="about_li3">Automatización de procesos con n8n e IA</div>
+        <div class="about-item" data-i="about_li4">Siempre aprendiendo nuevas tecnologías</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="reveal">
+    <div class="section-label" data-i="skills_label">Tecnologías</div>
+    <div class="section-title" data-i="skills_title">Mi stack técnico</div>
+    <div class="section-sub" data-i="skills_sub">Las herramientas y tecnologías que uso para construir mis proyectos.</div>
+  </div>
+  <div class="skills-grid reveal" id="skills-grid"></div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="reveal">
+    <div class="section-label" data-i="proj_label">Proyectos</div>
+    <div class="section-title" data-i="proj_title">Lo que construí</div>
+    <div class="section-sub" data-i="proj_sub">Una selección de proyectos personales y académicos. Cada uno resuelve un problema real.</div>
+  </div>
+  <div class="projects-filter" id="filter-btns"></div>
+  <div class="projects-grid" id="projects-grid"></div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-box reveal">
+    <div class="contact-title" data-i="contact_title">¿Trabajamos juntos?</div>
+    <div class="contact-sub" data-i="contact_sub">Estoy disponible para proyectos freelance, pasantías y oportunidades laborales.</div>
+    <div class="contact-links">
+      <a class="contact-link" href="mailto:andres.magnago@gmail.com">📧 andres.magnago@gmail.com</a>
+      <a class="contact-link" href="https://www.linkedin.com/in/andres-magnago-975214185/" target="_blank">💼 LinkedIn</a>
+      <a class="contact-link" href="https://github.com/andres-magnago" target="_blank">🐙 GitHub</a>
+      <a class="contact-link" href="https://maps.google.com/?q=Villa+General+Belgrano,+Cordoba,+Argentina" target="_blank">📍 Villa Gral. Belgrano, Cba</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span data-i="footer_made">Hecho con ❤️ por</span> <a href="https://www.linkedin.com/in/andres-magnago-975214185/" target="_blank">Andrés Magnago</a> · 2025 ·
+  <a href="https://www.linkedin.com/in/andres-magnago-975214185/" target="_blank">LinkedIn</a> ·
+  <a href="https://github.com/andres-magnago" target="_blank">GitHub</a>
+</footer>
+
+<script>
+/* ── TRADUCCIONES ───────────────────────────────────────────────── */
+const i18n = {
+  es:{
+    nav_about:'Sobre mí', nav_skills:'Skills', nav_projects:'Proyectos',
+    nav_contact:'Contacto', nav_hire:'Contratar →',
+    hero_badge:'👋 Disponible para trabajar',
+    hero_h1:'Hola, soy<br><span class="gradient-text">Andrés Magnago</span>',
+    hero_sub:'Desarrollador web full stack apasionado por crear experiencias digitales modernas, rápidas y accesibles.',
+    hero_btn1:'Ver proyectos', hero_btn2:'Contactarme',
+    stat_proj:'Proyectos', stat_tech:'Tecnologías', stat_months:'Meses de estudio',
+    scroll:'Scroll',
+    about_label:'Sobre mí', about_title:'Estudiante y desarrollador',
+    about_sub:'Actualmente cursando la Licenciatura en Informática en Universidad Siglo 21, construyendo proyectos reales mientras aprendo.',
+    about_body:'Soy de Villa General Belgrano, Córdoba, Argentina. Me especializo en desarrollo web front end y back end, con foco en crear productos que sean tanto funcionales como visualmente atractivos.',
+    about_li1:'Desarrollo web moderno con HTML, CSS y JavaScript',
+    about_li2:'Backend con Node.js y bases de datos SQL',
+    about_li3:'Automatización de procesos con n8n e IA',
+    about_li4:'Siempre aprendiendo nuevas tecnologías',
+    skills_label:'Tecnologías', skills_title:'Mi stack técnico',
+    skills_sub:'Las herramientas y tecnologías que uso para construir mis proyectos.',
+    proj_label:'Proyectos', proj_title:'Lo que construí',
+    proj_sub:'Una selección de proyectos personales y académicos. Cada uno resuelve un problema real.',
+    contact_title:'¿Trabajamos juntos?',
+    contact_sub:'Estoy disponible para proyectos freelance, pasantías y oportunidades laborales.',
+    footer_made:'Hecho con ❤️ por',
+    demo:'Ver demo', repo:'GitHub',
+    cat_all:'Todos', cat_frontend:'Frontend', cat_backend:'Backend', cat_other:'Otros',
+    skill_adv:'Avanzado', skill_mid:'Intermedio', skill_bas:'Básico',
+  },
+  en:{
+    nav_about:'About', nav_skills:'Skills', nav_projects:'Projects',
+    nav_contact:'Contact', nav_hire:'Hire me →',
+    hero_badge:'👋 Available for work',
+    hero_h1:'Hi, I\'m<br><span class="gradient-text">Andrés Magnago</span>',
+    hero_sub:'Full stack web developer passionate about creating modern, fast and accessible digital experiences.',
+    hero_btn1:'View projects', hero_btn2:'Contact me',
+    stat_proj:'Projects', stat_tech:'Technologies', stat_months:'Months of study',
+    scroll:'Scroll',
+    about_label:'About me', about_title:'Student & developer',
+    about_sub:'Currently studying Information Systems at Universidad Siglo 21, building real projects while learning.',
+    about_body:'I\'m from Villa General Belgrano, Córdoba, Argentina. I specialize in front end and back end web development, focused on creating products that are both functional and visually attractive.',
+    about_li1:'Modern web development with HTML, CSS and JavaScript',
+    about_li2:'Backend with Node.js and SQL databases',
+    about_li3:'Process automation with n8n and AI',
+    about_li4:'Always learning new technologies',
+    skills_label:'Technologies', skills_title:'My tech stack',
+    skills_sub:'The tools and technologies I use to build my projects.',
+    proj_label:'Projects', proj_title:'What I built',
+    proj_sub:'A selection of personal and academic projects. Each one solves a real problem.',
+    contact_title:'Let\'s work together!',
+    contact_sub:'Available for freelance projects, internships and job opportunities.',
+    footer_made:'Made with ❤️ by',
+    demo:'Live demo', repo:'GitHub',
+    cat_all:'All', cat_frontend:'Frontend', cat_backend:'Backend', cat_other:'Other',
+    skill_adv:'Advanced', skill_mid:'Intermediate', skill_bas:'Basic',
+  }
+};
+
+let lang = 'es';
+let theme = 'dark';
+
+function t(key){ return i18n[lang][key] || key; }
+
+function setLang(l){
+  lang = l;
+  document.documentElement.lang = l;
+  document.getElementById('btn-es').classList.toggle('active', l==='es');
+  document.getElementById('btn-en').classList.toggle('active', l==='en');
+  // Actualizar textos con data-i
+  document.querySelectorAll('[data-i]').forEach(el => {
+    const key = el.dataset.i;
+    if(i18n[lang][key] !== undefined){
+      el.innerHTML = i18n[lang][key];
+    }
+  });
+  // Reconstruir proyectos (descripciones cambian)
+  buildProjects();
+  buildFilter();
+}
+
+function toggleTheme(){
+  theme = theme === 'dark' ? 'light' : 'dark';
+  document.body.dataset.theme = theme;
+  document.getElementById('theme-btn').textContent = theme === 'dark' ? '🌙' : '☀️';
+}
+
+/* ── DATOS ──────────────────────────────────────────────────────── */
+const skills = [
+  {icon:'🌐',name:'HTML5',pct:90,color:'#D85A30',level:'adv'},
+  {icon:'🎨',name:'CSS3',pct:85,color:'#378ADD',level:'adv'},
+  {icon:'⚡',name:'JavaScript',pct:75,color:'#BA7517',level:'mid'},
+  {icon:'🗄️',name:'SQL',pct:70,color:'#1D9E75',level:'mid'},
+  {icon:'🟢',name:'Node.js',pct:50,color:'#7F77DD',level:'bas'},
+  {icon:'🐍',name:'Python',pct:45,color:'#D4537E',level:'bas'},
+  {icon:'🤖',name:'n8n / AI',pct:65,color:'#5DCAA5',level:'mid'},
+  {icon:'🐙',name:'Git',pct:68,color:'#F0997B',level:'mid'},
+];
+
+const projects = [
+  {
+    emoji:'📊', cat:'frontend',
+    gradient:'linear-gradient(135deg,#0e3d2a,#1a5c3f)',
+    tagColor:'rgba(29,158,117,0.25)',tagText:'#5DCAA5',
+    tags:['HTML','CSS','JS'],
+    demo:'calculadora-inflacion.html', repo:'https://github.com/andres-magnago',
+    title_es:'Calculadora de Inflación AR', title_en:'AR Inflation Calculator',
+    desc_es:'Calculá cuánto vale hoy un precio de meses anteriores usando datos históricos del INDEC.',
+    desc_en:'Calculate today\'s value of a past price using historical INDEC inflation data.',
+  },
+  {
+    emoji:'💱', cat:'frontend',
+    gradient:'linear-gradient(135deg,#3a2210,#5c3518)',
+    tagColor:'rgba(186,117,23,0.25)',tagText:'#EF9F27',
+    tags:['JS','API'],
+    demo:'conversor-usd-ars.html', repo:'https://github.com/andres-magnago',
+    title_es:'Conversor USD/ARS', title_en:'USD/ARS Converter',
+    desc_es:'Tipos de cambio en tiempo real: oficial, blue, MEP y CCL con conversión inversa.',
+    desc_en:'Real-time exchange rates: official, blue, MEP and CCL with reverse conversion.',
+  },
+  {
+    emoji:'✅', cat:'frontend',
+    gradient:'linear-gradient(135deg,#1a0f3a,#2d1a63)',
+    tagColor:'rgba(127,119,221,0.25)',tagText:'#AFA9EC',
+    tags:['HTML','CSS','JS'],
+    demo:'todo-app.html', repo:'https://github.com/andres-magnago',
+    title_es:'Task Manager', title_en:'Task Manager',
+    desc_es:'Gestor de tareas con prioridades, filtros y barra de progreso. Guardado automático.',
+    desc_en:'Task manager with priorities, filters and progress bar. Auto-save included.',
+  },
+  {
+    emoji:'🍽️', cat:'backend',
+    gradient:'linear-gradient(135deg,#2a1f5c,#3d2a7a)',
+    tagColor:'rgba(127,119,221,0.25)',tagText:'#AFA9EC',
+    tags:['Node.js','SQL','REST'],
+    demo:'api-recetas.html', repo:'https://github.com/andres-magnago',
+    title_es:'API REST de Recetas', title_en:'Recipes REST API',
+    desc_es:'Demo interactivo de una API CRUD con Node.js + Express + PostgreSQL y JWT.',
+    desc_en:'Interactive demo of a CRUD API with Node.js + Express + PostgreSQL and JWT auth.',
+  },
+  {
+    emoji:'🗄️', cat:'backend',
+    gradient:'linear-gradient(135deg,#0a2e1a,#154a2a)',
+    tagColor:'rgba(29,158,117,0.25)',tagText:'#5DCAA5',
+    tags:['SQL','DW','ETL'],
+    demo:'etl-dashboard.html', repo:'https://github.com/andres-magnago',
+    title_es:'ETL Data Warehouse', title_en:'ETL Data Warehouse',
+    desc_es:'Simulación animada del proceso ETL en SQL: Extracción, Transformación y Carga.',
+    desc_en:'Animated simulation of the SQL ETL pipeline: Extract, Transform and Load.',
+  },
+  {
+    emoji:'🤖', cat:'otros',
+    gradient:'linear-gradient(135deg,#3a1020,#5c1a33)',
+    tagColor:'rgba(212,83,126,0.25)',tagText:'#ED93B1',
+    tags:['n8n','IA','Automation'],
+    demo:'automatizacion-n8n.html', repo:'https://github.com/andres-magnago',
+    title_es:'Automatización n8n', title_en:'n8n Automation',
+    desc_es:'Flujos automatizados para gestión de tareas, formularios y reportes en 384 Group.',
+    desc_en:'Automated flows for task management, forms and reports at 384 Group.',
+  },
+];
+
+const cats = [
+  {key:'all',cat:'todos'},
+  {key:'frontend',cat:'frontend'},
+  {key:'backend',cat:'backend'},
+  {key:'other',cat:'otros'},
+];
+
+let activeFilter = 'todos';
+
+/* ── BUILD SKILLS ───────────────────────────────────────────────── */
+function buildSkills(){
+  const g = document.getElementById('skills-grid');
+  if(g.children.length) return; // solo construir una vez
+  skills.forEach(s => {
+    const levelMap = {adv:'skill_adv', mid:'skill_mid', bas:'skill_bas'};
+    const card = document.createElement('div');
+    card.className = 'skill-card';
+    card.dataset.skill = s.level;
+    card.innerHTML = `
+      <div class="skill-icon">${s.icon}</div>
+      <div class="skill-name">${s.name}</div>
+      <div class="skill-level" data-level="${s.level}">${t(levelMap[s.level])}</div>
+      <div class="skill-bar"><div class="skill-fill" data-pct="${s.pct}" style="background:${s.color}"></div></div>`;
+    g.appendChild(card);
+  });
+}
+
+function updateSkillLabels(){
+  const map = {adv:'skill_adv', mid:'skill_mid', bas:'skill_bas'};
+  document.querySelectorAll('[data-level]').forEach(el => {
+    el.textContent = t(map[el.dataset.level]);
+  });
+}
+
+/* ── BUILD FILTER ───────────────────────────────────────────────── */
+function buildFilter(){
+  const f = document.getElementById('filter-btns');
+  f.innerHTML = '';
+  cats.forEach(({key, cat}) => {
+    const b = document.createElement('button');
+    b.className = 'filter-btn' + (cat===activeFilter?' active':'');
+    b.textContent = t('cat_'+key);
+    b.onclick = () => {
+      activeFilter = cat;
+      document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      buildProjects();
+    };
+    f.appendChild(b);
+  });
+}
+
+/* ── BUILD PROJECTS ─────────────────────────────────────────────── */
+function buildProjects(){
+  const g = document.getElementById('projects-grid');
+  g.innerHTML = '';
+  const filtered = activeFilter==='todos' ? projects : projects.filter(p=>p.cat===activeFilter);
+  filtered.forEach((p,i) => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    card.style.animationDelay = (i*0.07)+'s';
+    const title = lang==='en' ? p.title_en : p.title_es;
+    const desc  = lang==='en' ? p.desc_en  : p.desc_es;
+    card.innerHTML = `
+      <div class="project-thumb" style="background:${p.gradient}">${p.emoji}</div>
+      <div class="project-body">
+        <div class="project-tags">${p.tags.map(tg=>`<span class="tag" style="background:${p.tagColor};color:${p.tagText}">${tg}</span>`).join('')}</div>
+        <div class="project-title">${title}</div>
+        <div class="project-desc">${desc}</div>
+        <div class="project-links">
+          <a class="link-btn pb" href="${p.demo}" target="_blank">🔗 ${t('demo')}</a>
+          <a class="link-btn" href="${p.repo}" target="_blank">🐙 ${t('repo')}</a>
+        </div>
+      </div>`;
+    g.appendChild(card);
+  });
+}
+
+/* ── UTILS ──────────────────────────────────────────────────────── */
+function goTo(id){ document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'}); }
+
+function animateCount(el, target, suffix=''){
+  let c=0; const step=Math.ceil(target/40);
+  const timer=setInterval(()=>{c=Math.min(c+step,target);el.textContent=c+suffix;if(c>=target)clearInterval(timer);},30);
+}
+
+/* ── INTERSECTION OBSERVER ──────────────────────────────────────── */
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+      e.target.querySelectorAll('.skill-fill').forEach(f=>{f.style.width=f.dataset.pct+'%';});
+    }
+  });
+},{threshold:0.1});
+
+/* ── INIT ───────────────────────────────────────────────────────── */
+buildSkills();
+buildFilter();
+buildProjects();
+
+setTimeout(()=>{
+  animateCount(document.getElementById('cnt-projects'),6);
+  animateCount(document.getElementById('cnt-tech'),8);
+  animateCount(document.getElementById('cnt-months'),18,'+');
+},600);
+
+setTimeout(()=>{document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));},100);
+</script>
+</body>
+</html>
